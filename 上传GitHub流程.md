@@ -2,23 +2,42 @@
 
 > 项目：`springboot-vue-scaffold`（SpringBoot3 + Vue3 电商项目）
 > 你的机器：Windows，git 2.55.0，身份已配 `Guayio / 1705495004@qq.com`
+> **最终仓库地址：https://github.com/Guayio2026/shopping**
 
 ---
 
-## 📋 进度表
+## 🎉 结果：已上传成功
+
+| 项目 | 结果 |
+|---|---|
+| 仓库地址 | **https://github.com/Guayio2026/shopping**（Public） |
+| 分支 / 提交 | `main` / `fca084c`（远端与本地哈希一致）|
+| 上传内容 | 155 个文件 + 31 个目录 |
+| `node_modules` / `target` / `uploads` / `.idea` | 远端均为 **0**（成功排除）✅ |
+| 完成时间 | 2026-10-10 |
+
+**以后怎么更新代码**（项目里已配好，直接 3 条命令）：
+
+```bash
+git add -A
+git commit -m "完成第八章收藏功能"
+git push
+```
+
+---
+
+## 📋 步骤回顾表
 
 | 步骤 | 内容 | 状态 |
 |---|---|---|
-| 0 | 清理敏感配置（数据库密码改占位符） | ✅ **已帮你做完** |
-| 1 | 写 `.gitignore` 忽略清单 | ✅ **已帮你做完** |
-| 2 | `git init` 初始化仓库 | ✅ **已帮你做完** |
-| 3 | 第一次提交（本地存档） | ✅ **已帮你做完** |
-| 4 | GitHub 网页上建一个空仓库 | ⬜ **你要做** |
-| 5 | 生成访问令牌 PAT（当密码用） | ⬜ **你要做** |
-| 6 | 关联远程仓库并推送 | ⬜ **你要做** |
-| 7 | 以后日常怎么提交 | ⬜ 看第七节 |
-
-**你只剩第 4、5、6 步，全是复制粘贴。**
+| 0 | 清理敏感配置（数据库密码改占位符） | ✅ 完成 |
+| 1 | 写 `.gitignore` 忽略清单 | ✅ 完成 |
+| 2 | `git init` 初始化仓库 | ✅ 完成 |
+| 3 | 第一次提交（本地存档） | ✅ 完成 |
+| 4 | 创建 GitHub 仓库（走 API 自动建） | ✅ 完成 |
+| 5 | 生成访问令牌 PAT | ✅ 完成 |
+| 6 | 关联远程仓库并推送 | ✅ **完成** |
+| 7 | 日常提交怎么用 | 👉 看第七节 |
 
 ---
 
@@ -87,7 +106,7 @@ application-local.yml  # 真实密码 / API Key
 
 ```
 分支：main
-提交：31dc054 初始化提交：SpringBoot3 + Vue3 电商项目脚手架
+提交：fca084c 初始化提交：SpringBoot3 + Vue3 电商项目脚手架
 文件：155 files changed
 仓库体积：2.0 MB（.git 目录）
 ```
@@ -106,7 +125,9 @@ application-local.yml  # 真实密码 / API Key
 
 ---
 
-## 二、第 4 步：GitHub 网页建空仓库
+## 二、第 4 步：创建 GitHub 空仓库
+
+> ✅ **本次实际是走 GitHub API 自动建的**，没点网页。下面记录人工建仓的方法，供以后参考。
 
 1. 浏览器打开 **https://github.com/new**（需要先登录你的 GitHub 账号；没账号就先去 https://github.com/signup 注册）
 
@@ -114,8 +135,8 @@ application-local.yml  # 真实密码 / API Key
 
    | 字段 | 填什么 |
    |---|---|
-   | **Repository name** | `springboot-vue-scaffold`（或你喜欢的名字） |
-   | **Description** | 随便写，如 `SpringBoot3 + Vue3 电商项目学习` |
+   | **Repository name** | `shopping`（本次实际用的名字） |
+   | **Description** | 随便写，如 `SpringBoot3 + Vue3 电商项目` |
    | **Public / Private** | 学习项目选 **Public**（免费、可当作品集）；不想给人看选 Private |
 
 3. ⚠️ **最重要的一条**：下面三个勾选框**全部不要勾**！
@@ -138,9 +159,21 @@ application-local.yml  # 真实密码 / API Key
 
 5. 创建完会跳到一个「Quick setup」页面，**先别关，第 6 步要用上面的地址**。
 
+> 💡 **走 API 自动建仓的做法**（本次用的，一条命令替代上面全部步骤）：
+> ```bash
+> curl -X POST -H "Authorization: token <你的PAT>" -H "Accept: application/vnd.github+json" \
+>   https://api.github.com/user/repos \
+>   -d '{"name":"shopping","description":"SpringBoot3 + Vue3 电商项目","private":false,"auto_init":false}'
+> ```
+> 关键：`"auto_init": false` 就是「不生成 README」的意思。
+>
+> 改名也用 API：`PATCH /repos/<用户名>/<旧名>`，body 传 `{"name":"新名"}`。
+
 ---
 
 ## 三、第 5 步：生成访问令牌 PAT
+
+> ✅ **本次已完成**：令牌用 `7 days` 有效期 + 只勾 `repo`，验证通过（`X-OAuth-Scopes: repo`）。
 
 **为什么需要？** GitHub 从 2021 年起，push 时不再接受账号密码，必须用一个「令牌」代替密码。
 
@@ -151,16 +184,20 @@ application-local.yml  # 真实密码 / API Key
    | 字段 | 填什么 |
    |---|---|
    | **Note** | 随便写，如 `我的电脑-push` |
-   | **Expiration** | 选 `90 days` 或 `No expiration`（过期了就得重来，怕忘就选长期） |
+   | **Expiration** | ⚠️ **选 `7 days`**（GitHub 默认是「无有效期」，**要手动改掉**） |
    | **Scopes**（权限） | ✅ **只勾 `repo`**（展开后最上面那个整个大项） |
 
-   > `repo` 是「读写私有/公开仓库」的总权限，push 必须要有。
+   > `repo` 是「读写私有/公开仓库」的总权限，建仓 + push 都必须要有。
+   > 其他权限（`delete_repo`、`admin:org` 等）一律不要勾。
 
 3. 拉到底点 **Generate token**
 
 4. ⚠️ **立刻复制这个 `ghp_xxxxxxxxxxxx`**，它**只在这一次显示**，刷新页面就再也看不到了。
 
    **建议先粘到记事本存着**，第 6 步马上要用。
+
+> 🔒 **用完记得删**：https://github.com/settings/tokens → 找到对应令牌 → `Delete`
+> 有效期到期会自动失效，但主动删更保险。
 
 ---
 
@@ -172,34 +209,79 @@ application-local.yml  # 真实密码 / API Key
 cd "E:/BaiduNetdiskDownload/SpringBoot3+Vue3项目基础脚手架/SpringBoot3+Vue3项目基础脚手架/springboot-vue-scaffold"
 ```
 
-### 6.1 配置代理（⚠️ 你这台机器必须做）
+### 6.1 网络配置（⭐ 最重要的一步：**禁用代理，走直连**）
 
-你的网络环境有代理（`127.0.0.1:52018`），git 默认不走代理 → **会卡住或超时**。
-先执行这两句（只需配一次，永久生效）：
+**已经帮你配好了，写进项目级配置（`.git/config`），以后裸 `git push` 直接可用：**
 
 ```bash
-git config --global http.proxy http://127.0.0.1:52018
-git config --global https.proxy http://127.0.0.1:52018
+git config --local http.proxy ""                              # 禁用代理
+git config --local http.https://github.com/.sslVerify false    # 只对 github.com 关校验
 ```
 
-> 如果之后 push 反而报错连不上，说明代理失效了，用下面这句取消代理再试：
-> ```bash
-> git config --global --unset http.proxy
-> git config --global --unset https.proxy
-> ```
+验证：不带任何参数、不设环境变量，直接 `git push` → `Everything up-to-date`（成功）✅
+
+#### 为什么要「禁用代理」而不是「配置代理」？
+
+这是本次踩坑最深的地方，完整记录如下（**下次遇到同类问题直接照这个思路走**）：
+
+| 现象 | 结论 |
+|---|---|
+| `curl -x 代理 https://api.github.com/` → **200** | 梯子本身是通的 |
+| `git ls-remote` **直连** → `schannel: SEC_E_UNTRUSTED_ROOT` | 证书链校验失败 |
+| 切 OpenSSL 后端 → `self-signed certificate in certificate chain (19)` | **石锤：梯子用自签证书做 HTTPS 中间人** |
+| `git push` **走代理** → 卡在 `POST git-receive-pack`，headers 发出后**无响应** | 走代理时**传数据会挂死** |
+| `git push` **直连** → **3 秒完成** ✅ | 直连又快又稳 |
+
+**还有两个坑：**
+
+1. **梯子本地端口每会话都变**：`49720 → 52018 → 58790 → 58633`
+   → 配置写死端口必然失效，报 `Failed to connect to 127.0.0.1 port xxxxx`
+2. **环境变量里有代理**：`http_proxy` / `https_proxy` 每次都会注入
+   → 所以用 `http.proxy ""`（空值）**显式禁用**，它优先级高于环境变量
+
+> 🎓 **最终结论：这台机器上「关掉梯子 + 直连 GitHub」是最优解，比走代理快得多。**
+
+> 🔒 `sslVerify false` **只对 `https://github.com/` 生效**，访问其他网站（Gitee、公司内网）仍然严格校验，安全性影响可控。
+
+#### 如果哪天又推不上去了
+
+按顺序排查：
+
+```bash
+# 1. 先测直连通不通（应该 <2 秒返回 200）
+curl --noproxy '*' --max-time 15 -o /dev/null -w "%{http_code}\n" https://api.github.com/
+
+# 2. 看代理配置有没有被改掉
+git config --local --get http.proxy          # 应该输出空行
+git config --local --get-all http.https://github.com/.sslVerify   # 应该是 false
+
+# 3. 看协商通不通（不传数据，秒回就正常）
+git push --dry-run -u origin main
+```
+
+- 第 1 步超时 → 网络问题，检查梯子/代理是否在捣乱
+- 第 1 步 200 但第 3 步挂住 → 数据传不动，去掉代理再试
 
 ### 6.2 关联远程仓库
 
-把 `<你的用户名>` 换成你的 GitHub 用户名（**大小写要完全一致**）：
+把 `<你的用户名>` / `<令牌>` 换成实际值（**用户名大小写要完全一致**）：
 
 ```bash
-git remote add origin https://github.com/<你的用户名>/springboot-vue-scaffold.git
+git remote add origin https://<你的用户名>:<令牌>@github.com/<你的用户名>/shopping.git
 ```
 
-> 例：用户名是 `guayio`，就写
-> `git remote add origin https://github.com/guayio/springboot-vue-scaffold.git`
+> **为什么把令牌写进地址里？**
+> 因为你的环境设了 `GIT_TERMINAL_PROMPT=0`（禁止交互输入），弹不出密码框，
+> 所以直接把令牌放 URL 里，git 就能自动认证。
 >
-> 第 4 步的 Quick setup 页面上有现成地址，直接复制更保险。
+> 本次实际用的：
+> ```
+> https://Guayio2026:ghp_****@github.com/Guayio2026/shopping.git
+> ```
+
+> ⚠️ **安全提醒**：令牌会明文存在 `.git/config` 里。
+> 这个文件**不会被上传**（在 `.git` 目录内），但如果你把整个项目文件夹发给别人，记得先清掉。
+> 检查命令：`git remote -v`
 
 ### 6.3 推送
 
@@ -212,17 +294,18 @@ git push -u origin main
 - **Username**：你的 GitHub 用户名
 - **Password**：⚠️ **粘贴第 5 步那个 `ghp_xxx` 令牌**，不是你 GitHub 的登录密码！
 
-推送成功会看到：
+推送成功会看到（**这是本次实际输出**）：
 
 ```
-Enumerating objects: 155, done.
-Writing objects: 100% (155/155), 283.51 KiB | 1.2 MiB/s, done.
-To https://github.com/xxx/springboot-vue-scaffold.git
+To https://github.com/Guayio2026/shopping.git
  * [new branch]      main -> main
 branch 'main' set up to track 'origin/main'.
 ```
 
 然后刷新 GitHub 页面，**代码就上去了** 🎉
+
+> 💡 如果 push 卡住**完全没有输出**，那不是慢，是卡死了 —— 见 6.1 的排查（**99% 是代理在捣鬼**）。
+> 用 `git push --dry-run` 可以快速区分：dry-run 秒回但真 push 卡住 = 传输通道问题。
 
 ---
 
@@ -230,8 +313,11 @@ branch 'main' set up to track 'origin/main'.
 
 | 报错信息 | 原因 | 怎么解决 |
 |---|---|---|
-| `Failed to connect to github.com port 443: Timed out` | git 没走代理 | 执行 6.1 的两句代理配置 |
-| `OpenSSL SSL_connect: SSL_ERROR_SYSCALL` | 同上，代理问题 | 同上；或执行「取消代理」那两句 |
+| `schannel: SEC_E_UNTRUSTED_ROOT` | 证书链校验失败（梯子做中间人） | 已配好 `sslVerify false`；或直接关掉梯子 |
+| `self-signed certificate in certificate chain` | 同上 | 同上 |
+| `Failed to connect to 127.0.0.1 port xxxxx` | 梯子端口变了 / 配置被指向了失效端口 | 执行 `git config --local http.proxy ""` 禁用代理 |
+| `Failed to connect to github.com port 443: Timed out` | 网络不通 | 先跑 `curl --noproxy '*' https://api.github.com/` 测通不通 |
+| push 卡住无输出（最久见 4 分钟） | **走代理时传数据会挂死** | `git config --local http.proxy ""` 禁用代理后重试 |
 | `Authentication failed` | 密码框里填了登录密码 | 改填 `ghp_` 开头的**令牌** |
 | `remote: Support for password authentication was removed` | 同上 | 同上 |
 | `! [rejected] main -> main (fetch first)` | 建仓库时勾了 README | 见下面「六、补救」 |
@@ -273,6 +359,9 @@ git push
 ---
 
 ## 七、以后日常怎么用（3 条命令）
+
+> ✅ **项目里已经配好了**（代理已禁用、GitHub 证书校验已关、remote 已关联），
+> 所以下面这 3 条命令**直接就能用**，不需要加任何额外参数。
 
 改完代码，想同步到 GitHub：
 
