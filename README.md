@@ -199,6 +199,7 @@ springboot-vue-scaffold/
 | `第六章-全部商品页-步骤.md` | 商品列表（搜索 + 筛选 + 分页） |
 | `第七章-商品详情页-步骤.md` | 商品详情（图文 + 购买须知） |
 | `上传GitHub流程.md` | 把项目推到 GitHub 的完整流程 |
+| `GitHub分支工作流.md` | 新章节怎么用分支 + Pull Request 开发 |
 
 ---
 
