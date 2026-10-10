@@ -1,0 +1,123 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.scaffold.mapper.UserMapper">
+
+    <resultMap id="UserResultMap" type="com.scaffold.entity.User">
+        <id property="id" column="id"/>
+        <result property="username" column="username"/>
+        <result property="password" column="password"/>
+        <result property="nickname" column="nickname"/>
+        <result property="avatar" column="avatar"/>
+        <result property="phone" column="phone"/>
+        <result property="role" column="role"/>
+        <result property="status" column="status"/>
+        <result property="openid" column="openid"/>
+        <result property="balance" column="balance"/>
+        <result property="createdAt" column="created_at"/>
+        <result property="updatedAt" column="updated_at"/>
+    </resultMap>
+
+    <sql id="BaseColumns">
+        id, username, password, nickname, avatar, phone, role, status, openid, balance, created_at, updated_at
+    </sql>
+
+    <select id="findById" resultMap="UserResultMap">
+        SELECT <include refid="BaseColumns"/> FROM `user` WHERE id = #{id}
+    </select>
+
+    <select id="findByUsername" resultMap="UserResultMap">
+        SELECT <include refid="BaseColumns"/> FROM `user` WHERE username = #{username} LIMIT 1
+    </select>
+
+    <select id="findByOpenid" resultMap="UserResultMap">
+        SELECT <include refid="BaseColumns"/> FROM `user` WHERE openid = #{openid} LIMIT 1
+    </select>
+
+    <select id="findPage" resultMap="UserResultMap">
+        SELECT <include refid="BaseColumns"/> FROM `user`
+        <where>
+            <if test="keyword != null and keyword != ''">
+                AND (username LIKE CONCAT('%', #{keyword}, '%')
+                OR nickname LIKE CONCAT('%', #{keyword}, '%')
+                OR phone LIKE CONCAT('%', #{keyword}, '%'))
+            </if>
+            <if test="role != null and role != ''">
+                AND role = #{role}
+            </if>
+        </where>
+        ORDER BY id DESC
+        LIMIT #{limit} OFFSET #{offset}
+    </select>
+
+    <select id="countPage" resultType="long">
+        SELECT COUNT(*) FROM `user`
+        <where>
+            <if test="keyword != null and keyword != ''">
+                AND (username LIKE CONCAT('%', #{keyword}, '%')
+                OR nickname LIKE CONCAT('%', #{keyword}, '%')
+                OR phone LIKE CONCAT('%', #{keyword}, '%'))
+            </if>
+            <if test="role != null and role != ''">
+                AND role = #{role}
+            </if>
+        </where>
+    </select>
+
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO `user` (username, password, nickname, avatar, phone, role, status, openid, balance)
+        VALUES (#{username}, #{password}, #{nickname}, #{avatar}, #{phone}, #{role}, #{status}, #{openid}, #{balance})
+    </insert>
+
+    <update id="update">
+        UPDATE `user`
+        <set>
+            <if test="nickname != null">nickname = #{nickname},</if>
+            <if test="avatar != null">avatar = #{avatar},</if>
+            <if test="phone != null">phone = #{phone},</if>
+            <if test="role != null">role = #{role},</if>
+            <if test="status != null">status = #{status},</if>
+            <if test="openid != null">openid = #{openid},</if>
+            <if test="balance != null">balance = #{balance},</if>
+            updated_at = CURRENT_TIMESTAMP
+        </set>
+        WHERE id = #{id}
+    </update>
+
+    <update id="updatePassword">
+        UPDATE `user` SET password = #{password}, updated_at = CURRENT_TIMESTAMP WHERE id = #{id}
+    </update>
+
+    <update id="updateBalance">
+        UPDATE `user` SET balance = #{balance}, updated_at = CURRENT_TIMESTAMP WHERE id = #{id}
+    </update>
+
+    <update id="deductBalance">
+        UPDATE `user`
+        SET balance = balance - #{amount}, updated_at = CURRENT_TIMESTAMP
+        WHERE id = #{id} AND balance >= #{amount}
+    </update>
+
+    <update id="addBalance">
+        UPDATE `user`
+        SET balance = balance + #{amount}, updated_at = CURRENT_TIMESTAMP
+        WHERE id = #{id}
+    </update>
+
+    <delete id="deleteById">
+        DELETE FROM `user` WHERE id = #{id}
+    </delete>
+
+    <select id="countAll" resultType="long">
+        SELECT COUNT(*) FROM `user`
+    </select>
+
+    <select id="countDailyCreated" resultType="com.scaffold.dto.NameCount">
+        SELECT DATE_FORMAT(created_at, '%m-%d') AS name, COUNT(*) AS value
+        FROM `user`
+        WHERE created_at &gt;= DATE_SUB(CURDATE(), INTERVAL #{days} - 1 DAY)
+        GROUP BY DATE(created_at)
+        ORDER BY DATE(created_at) ASC
+    </select>
+
+</mapper>

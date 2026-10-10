@@ -1,0 +1,244 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<!--
+  商品 SQL 映射文件（整条链路里唯一真正执行 SQL 的地方）
+
+  ========================== 它是链路的最底层 ==========================
+  前端按钮点击
+    → Goods.vue 的方法
+      → api/goods.js 的函数
+        → GoodsController 的接口
+          → GoodsService 的业务方法
+            → GoodsMapper 接口声明
+              → 【本文件执行 SQL】
+                → MySQL 的 shopping.goods 表
+  数据查出来后，再一层层原路返回，最后渲染成页面上的表格行。
+  ====================================================================
+
+  ★★★ 【和 Type2Mapper.xml 最大的区别：这里有 JOIN】★★★
+
+  goods 表里只有 type_id（分类 id）和 user_id（用户 id），没有名字。
+  但页面要显示「食品」「演示用户」这种可读的文字，怎么办？
+
+  → 用 JOIN 去别的表把名字"带"出来：
+
+      SELECT g.*, t.name AS type_name, u.nickname AS user_name
+      FROM goods g
+      LEFT JOIN `type` t ON g.type_id = t.id      ← 拿分类名
+      LEFT JOIN `user` u ON g.user_id = u.id      ← 拿用户名
+
+  四个要点：
+    ① g / t / u 是「表别名」，给表起短名，后面引用列时写 g.name 而不是 goods.name
+    ② 用 LEFT JOIN 而不是 JOIN —— 即使分类被删了（type_id 找不到），商品也要能显示出来
+    ③ AS type_name 是「列别名」，让结果里的列名叫 type_name，好和 resultMap 对上
+    ④ 表名 type 和 user 用反引号包起来 —— 它们是 MySQL 的敏感词，包起来更安全
+
+  【和 Java 接口的对应关系】
+  namespace 必须是接口全名：com.scaffold.mapper.GoodsMapper
+  下面每个 id 必须和接口方法名一模一样，写错启动就报错：
+     接口 findPage()  ↔  <select id="findPage">
+     接口 insert()    ↔  <insert id="insert">
+
+  ⚠️⚠️ 【警告】本文件绝对不要用 Ctrl+R 批量替换！⚠️⚠️
+  因为下面这些关键字都含 "type"，一替换就废：
+    第 2 行  <!DOCTYPE ...>          ← 被改成 DOCType2 → XML 直接报错
+    resultMap 的 type="..." 属性     ← 被改成 Type2="..." → MyBatis 解析失败
+    查询的 resultType="long" 属性    ← 被改成 resultType2="long" → 解析失败
+  改本文件时，请手动逐处修改。
+-->
+<mapper namespace="com.scaffold.mapper.GoodsMapper">
+
+    <!-- 结果映射：把数据库查出来的"列"翻译成 Java 对象的"字段"
+         【为什么要翻译】数据库习惯下划线命名（user_id），Java 习惯驼峰（userId）。
+         有了这份映射，实体类就不用写任何注解，前端也不用管命名差异。 -->
+    <resultMap id="BaseResultMap" type="com.scaffold.entity.Goods">
+        <id property="id" column="id"/>                       <!-- 主键 -->
+        <result property="name" column="name"/>               <!-- 商品名称 -->
+        <result property="descr" column="descr"/>             <!-- 描述 -->
+        <result property="content" column="content"/>         <!-- 详情正文 -->
+        <result property="cover" column="cover"/>             <!-- 封面图 -->
+        <result property="price" column="price"/>             <!-- 价格 -->
+        <result property="store" column="store"/>             <!-- 库存 -->
+        <result property="userId" column="user_id"/>          <!-- 下划线 → 驼峰 -->
+        <result property="date" column="date"/>               <!-- 上架日期 -->
+        <result property="typeId" column="type_id"/>          <!-- 分类 id -->
+        <result property="state" column="state"/>             <!-- 上架/下架 -->
+        <result property="sales" column="sales"/>             <!-- 销量 -->
+
+        <!-- ★ 下面两个不是 goods 表的列，是 JOIN 出来的「虚拟列」
+             t.name AS type_name  →  装进 typeName 字段  →  前端显示「食品」
+             u.nickname AS user_name  →  装进 userName 字段  →  前端显示「演示用户」 -->
+        <result property="typeName" column="type_name"/>
+        <result property="userName" column="user_name"/>
+    </resultMap>
+
+    <!-- 【可复用的 SQL 片段】查询字段清单
+         把 JOIN 出来的两个虚拟列也一起 SELECT 出来。
+         <include refid="baseColumns"/> 可以在多处复用，避免重复抄一大串。 -->
+    <sql id="baseColumns">
+        g.id, g.name, g.descr, g.content, g.cover, g.price, g.store,
+        g.user_id, g.date, g.type_id, g.state, g.sales,
+        t.name AS type_name,
+        u.nickname AS user_name
+    </sql>
+
+    <!-- 【可复用的 SQL 片段】表 + JOIN
+         LEFT JOIN 保证：分类/用户不存在时，商品记录依然会返回（那两列显示为空） -->
+    <sql id="baseFrom">
+        FROM goods g
+        LEFT JOIN `type` t ON g.type_id = t.id
+        LEFT JOIN `user` u ON g.user_id = u.id
+    </sql>
+
+    <!-- 【可复用的 SQL 片段】筛选条件（搜索 + 分类筛选）
+         ⚠️ 注意：findPage 和 countPage 必须用同一套条件，
+            否则会出现「总数说 10 条，但列表只显示 3 条」这种诡异情况 -->
+    <sql id="baseWhere">
+        <where>
+            <if test="keyword != null and keyword != ''">
+                AND g.name LIKE CONCAT('%', #{keyword}, '%')
+            </if>
+            <if test="typeId != null">
+                AND g.type_id = #{typeId}
+            </if>
+        </where>
+    </sql>
+
+    <!-- 【查一条】接口 GoodsMapper.findById
+         链路：前端 getGoodsById() → Controller.getById → Service.getById → 这里 -->
+    <select id="findById" resultMap="BaseResultMap">
+        SELECT <include refid="baseColumns"/>
+        <include refid="baseFrom"/>
+        WHERE g.id = #{id}
+    </select>
+
+    <!-- 【查全部】接口 GoodsMapper.findAll
+         链路：前端 getGoodsList()（下拉框用）→ Controller.list → Service.listAll → 这里
+         按 id 降序：最新添加的排在最前面 -->
+    <select id="findAll" resultMap="BaseResultMap">
+        SELECT <include refid="baseColumns"/>
+        <include refid="baseFrom"/>
+        ORDER BY g.id DESC
+    </select>
+    <!-- 【新品上架】接口 GoodsMapper.findLatest
+         首页「新品上架」用：按上架日期倒序取前 N 条 -->
+    <select id="findLatest" resultMap="BaseResultMap">
+        SELECT <include refid="baseColumns"/>
+        <include refid="baseFrom"/>
+        WHERE g.state = '上架'
+        ORDER BY g.date DESC, g.id DESC
+        LIMIT #{limit}
+    </select>
+
+    <!-- 【热销商品】接口 GoodsMapper.findHot
+         首页「热销商品」用：按销量倒序取前 N 条 -->
+    <select id="findHot" resultMap="BaseResultMap">
+        SELECT <include refid="baseColumns"/>
+        <include refid="baseFrom"/>
+        WHERE g.state = '上架'
+        ORDER BY g.sales DESC, g.id DESC
+        LIMIT #{limit}
+    </select>
+    <!-- 【分页数据】接口 GoodsMapper.findPage
+         链路：前端 getGoodsPage()（打开页面/查询/翻页/按分类筛选）→ Controller.page → Service.page → 这里
+         LIMIT #{limit} OFFSET #{offset}：每页取 limit 条，跳过 offset 条
+         （offset 是 Service 算好的：(page-1)*size） -->
+    <select id="findPage" resultMap="BaseResultMap">
+        SELECT <include refid="baseColumns"/>
+        <include refid="baseFrom"/>
+        <include refid="baseWhere"/>
+        ORDER BY g.id DESC
+        LIMIT #{limit} OFFSET #{offset}
+    </select>
+
+    <!-- 【分页总数】接口 GoodsMapper.countPage
+         链路：和 findPage 一起被 Service.page 调用
+         作用：前端分页控件要显示「共 N 条」、要算总页数
+         ⚠️ 条件必须和上面的 findPage 一致（所以共用 baseWhere 片段） -->
+    <select id="countPage" resultType="long">
+        SELECT COUNT(*)
+        <include refid="baseFrom"/>
+        <include refid="baseWhere"/>
+    </select>
+    <!-- 【前台专用】筛选条件：固定只查「上架」+ 可选关键词/分类
+
+         ⚠️ 为什么不直接改上面的 baseWhere？
+         因为 baseWhere 被后台的 findPage/countPage 共用，后台需要能看到「下架」商品。
+         给 baseWhere 加 state 参数的话，就得同时改那两个方法签名、还得让后台传 null ——
+         动的地方多、容易出错。前台语义本来就不一样，单开一套更清楚。
+
+         ⚠️ g.state = '上架' 写在 <where> 里、没有 <if> 包着，是「无条件生效」的意思。 -->
+    <sql id="onSaleWhere">
+        <where>
+            g.state = '上架'
+            <if test="keyword != null and keyword != ''">
+                AND g.name LIKE CONCAT('%', #{keyword}, '%')
+            </if>
+            <if test="typeId != null">
+                AND g.type_id = #{typeId}
+            </if>
+        </where>
+    </sql>
+
+    <!-- 【前台分页数据】接口 GoodsMapper.findPageOnSale
+         链路：前台 GoodsList.vue → api/goodsPublic.js → PublicController.goods
+              → GoodsService.pageOnSale → 这里 -->
+    <select id="findPageOnSale" resultMap="BaseResultMap">
+        SELECT <include refid="baseColumns"/>
+        <include refid="baseFrom"/>
+        <include refid="onSaleWhere"/>
+        ORDER BY g.id DESC
+        LIMIT #{limit} OFFSET #{offset}
+    </select>
+
+    <!-- 【前台分页总数】接口 GoodsMapper.countPageOnSale
+         ⚠️ 必须和 findPageOnSale 共用同一个 onSaleWhere，条件才不会对不上 -->
+    <select id="countPageOnSale" resultType="long">
+        SELECT COUNT(*)
+        <include refid="baseFrom"/>
+        <include refid="onSaleWhere"/>
+    </select>
+
+    <!-- 【新增】接口 GoodsMapper.insert
+         链路：前端弹窗点「确定」（新增）→ Controller.create → Service.create → 这里
+         useGeneratedKeys="true" keyProperty="id"：
+           插入时数据库会自动生成自增 id，这两个属性让 MyBatis 把新 id 回填到 Java 对象的 id 上，
+           Service 才能立刻拿 goods.getId() 去回查刚插入的那条记录。
+         ⚠️ typeName / userName 不在列里 —— 它们不是表字段，是 JOIN 出来的虚拟列 -->
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO goods (name, descr, content, cover, price, store, user_id, date, type_id, state, sales)
+        VALUES (#{name}, #{descr}, #{content}, #{cover}, #{price}, #{store},
+                #{userId}, #{date}, #{typeId}, #{state}, #{sales})
+    </insert>
+
+    <!-- 【修改】接口 GoodsMapper.update
+         链路：前端弹窗点「确定」（编辑）→ Controller.update → Service.update → 这里
+         <set> + <if> 是动态 SQL：只更新「传了值」的字段。
+           某个字段为空 → 不动那一列（不会把原来的内容清空） -->
+    <update id="update">
+        UPDATE goods
+        <set>
+            <if test="name != null">name = #{name},</if>
+            <if test="descr != null">descr = #{descr},</if>
+            <if test="content != null">content = #{content},</if>
+            <if test="cover != null">cover = #{cover},</if>
+            <if test="price != null">price = #{price},</if>
+            <if test="store != null">store = #{store},</if>
+            <if test="userId != null">user_id = #{userId},</if>
+            <if test="date != null">date = #{date},</if>
+            <if test="typeId != null">type_id = #{typeId},</if>
+            <if test="state != null">state = #{state},</if>
+            <if test="sales != null">sales = #{sales},</if>
+        </set>
+        WHERE id = #{id}
+    </update>
+
+    <!-- 【删除】接口 GoodsMapper.deleteById
+         链路：前端表格点「删除」→ Controller.delete → Service.delete → 这里
+         返回的「影响行数」是 1 表示删掉了 1 条；Service 已提前用 getById 校验过存在性 -->
+    <delete id="deleteById">
+        DELETE FROM goods WHERE id = #{id}
+    </delete>
+</mapper>

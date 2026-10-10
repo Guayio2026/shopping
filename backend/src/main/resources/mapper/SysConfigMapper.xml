@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.scaffold.mapper.SysConfigMapper">
+
+    <resultMap id="BaseResultMap" type="com.scaffold.entity.SysConfig">
+        <id property="configKey" column="config_key"/>
+        <result property="configValue" column="config_value"/>
+        <result property="remark" column="remark"/>
+        <result property="updatedAt" column="updated_at"/>
+    </resultMap>
+
+    <select id="findByKey" resultMap="BaseResultMap">
+        SELECT * FROM sys_config WHERE config_key = #{configKey}
+    </select>
+
+    <select id="findAll" resultMap="BaseResultMap">
+        SELECT * FROM sys_config ORDER BY config_key ASC
+    </select>
+
+    <insert id="insert">
+        INSERT INTO sys_config (config_key, config_value, remark)
+        VALUES (#{configKey}, #{configValue}, #{remark})
+    </insert>
+
+    <update id="updateValue">
+        UPDATE sys_config
+        SET config_value = #{configValue},
+            remark = #{remark},
+            updated_at = CURRENT_TIMESTAMP
+        WHERE config_key = #{configKey}
+    </update>
+</mapper>

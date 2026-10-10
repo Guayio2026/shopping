@@ -1,0 +1,124 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<!--
+  商品分类 SQL 映射文件（整条链路里唯一真正执行 SQL 的地方）
+
+  ========================== 它是链路的最底层 ==========================
+  前端按钮点击
+    → Types.vue 的方法
+      → api/type.js 的函数
+        → TypeController 的接口
+          → TypeService 的业务方法
+            → TypeMapper 接口声明
+              → 【本文件执行 SQL】
+                → MySQL 的 shopping.type 表
+  数据查出来后，再一层层原路返回，最后渲染成页面上的表格行。
+  ====================================================================
+
+  【和 Java 接口的对应关系】
+  namespace 必须是接口全名：com.scaffold.mapper.TypeMapper
+  下面每个 id 必须和接口方法名一模一样，写错启动就报错：
+     接口 findPage()  ↔  <select id="findPage">
+     接口 insert()    ↔  <insert id="insert">
+
+  【和前端的关系（重要）】
+  前端表格列 <el-table-column prop="sortOrder"> 显示的数据，
+  最终就是从这里的 resultMap 映射出来的。链路：
+    数据库列 sort_order → resultMap 翻成 sortOrder → JSON 里的 "sortOrder" → 前端 row.sortOrder
+  所以改数据库列名时，resultMap 要跟着改，否则前端拿到 null、表格空白。
+
+  【#{xxx} 是什么】占位符，MyBatis 会自动换成 ? 并做参数绑定（防 SQL 注入）。
+  对应的值来自接口方法上的 @Param 名字。
+-->
+<mapper namespace="com.scaffold.mapper.TypeMapper">
+
+    <!-- 结果映射：把数据库查出来的"列"翻译成 Java 对象的"字段"
+         【为什么要翻译】数据库习惯下划线命名（sort_order），Java 习惯驼峰（sortOrder）。
+         有了这份映射，实体类就不用写任何注解，前端也不用管命名差异。 -->
+    <resultMap id="BaseResultMap" type="com.scaffold.entity.Type">
+        <id property="id" column="id"/>                     <!-- 主键：数据库 id → Java id -->
+        <result property="name" column="name"/>             <!-- 分类名 -->
+        <result property="sortOrder" column="sort_order"/>  <!-- 下划线 → 驼峰，前端能看到 sortOrder -->
+        <result property="createdAt" column="created_at"/>  <!-- 创建时间 -->
+    </resultMap>
+
+    <!-- 【查一条】接口 TypeMapper.findById
+         链路：前端（回查详情）→ Controller.getById → Service.getById → 这里
+         #{id} 的值来自接口方法上的 @Param("id") -->
+    <select id="findById" resultMap="BaseResultMap">
+        SELECT * FROM type WHERE id = #{id}
+    </select>
+
+    <!-- 【查全部】接口 TypeMapper.findAll
+         链路：前端 getTypeList()（下拉框）→ Controller.list → Service.listAll → 这里
+         按排序值升序；排序值相同时按 id 升序，保证顺序稳定 -->
+    <select id="findAll" resultMap="BaseResultMap">
+        SELECT * FROM type ORDER BY sort_order ASC, id ASC
+    </select>
+
+    <!-- 【分页数据】接口 TypeMapper.findPage
+         链路：前端 getTypePage()（打开页面/查询/翻页）→ Controller.page → Service.page → 这里
+         <where> + <if> 是"动态 SQL"：
+           keyword 有值 → 拼上 AND name LIKE '%关键字%'
+           keyword 为空 → 完全不拼这个条件（<where> 还会自动处理开头的 AND 问题）
+         LIMIT #{limit} OFFSET #{offset}：每页取 limit 条，跳过 offset 条
+         （offset 是 Service 算好的：(page-1)*size） -->
+    <select id="findPage" resultMap="BaseResultMap">
+        SELECT * FROM type
+        <where>
+            <if test="keyword != null and keyword != ''">
+                AND name LIKE CONCAT('%', #{keyword}, '%')
+            </if>
+        </where>
+        ORDER BY sort_order ASC, id ASC
+        LIMIT #{limit} OFFSET #{offset}
+    </select>
+
+    <!-- 【分页总数】接口 TypeMapper.countPage
+         链路：和 findPage 一起被 Service.page 调用
+         作用：前端分页控件要显示"共 4 条"、要算总页数，所以必须单独查一次总数
+         ⚠️ 筛选条件必须和上面的 findPage 保持一致，否则"总数"和"实际列表"对不上 -->
+    <select id="countPage" resultType="long">
+        SELECT COUNT(*) FROM type
+        <where>
+            <if test="keyword != null and keyword != ''">
+                AND name LIKE CONCAT('%', #{keyword}, '%')
+            </if>
+        </where>
+    </select>
+
+    <!-- 【新增】接口 TypeMapper.insert
+         链路：前端弹窗点「确定」（新增）→ Controller.create → Service.create → 这里
+         useGeneratedKeys="true" keyProperty="id"：
+           插入时数据库会自动生成自增 id，这两个属性让 MyBatis 把新 id 回填到 Java 对象的 id 上，
+           Service 才能立刻拿 type.getId() 去回查刚插入的那条记录。
+         ⚠️ 没有 created_at 字段是因为表里设了 DEFAULT CURRENT_TIMESTAMP，数据库自己填。 -->
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO type (name, sort_order)
+        VALUES (#{name}, #{sortOrder})
+    </insert>
+
+    <!-- 【修改】接口 TypeMapper.update
+         链路：前端弹窗点「确定」（编辑）→ Controller.update → Service.update → 这里
+         <set> + <if> 是动态 SQL：只更新"传了值"的字段。
+           name 为空 → 不动 name 列（不会把原来的名字清空）
+           排序传了 → 更新 sort_order
+         WHERE id = #{id}：id 来自 Service（以 URL 上的 id 为准） -->
+    <update id="update">
+        UPDATE type
+        <set>
+            <if test="name != null">name = #{name},</if>
+            <if test="sortOrder != null">sort_order = #{sortOrder},</if>
+        </set>
+        WHERE id = #{id}
+    </update>
+
+    <!-- 【删除】接口 TypeMapper.deleteById
+         链路：前端表格点「删除」→ Controller.delete → Service.delete → 这里
+         返回的"影响行数"是 1 表示删掉了 1 条；Service 已提前用 getById 校验过存在性 -->
+    <delete id="deleteById">
+        DELETE FROM type WHERE id = #{id}
+    </delete>
+</mapper>

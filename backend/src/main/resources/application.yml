@@ -1,0 +1,35 @@
+spring:
+  application:
+    name: springboot-vue-scaffold
+  profiles:
+    active: dev
+  config:
+    import: optional:classpath:application-local.yml
+  servlet:
+    multipart:
+      max-file-size: 500MB
+      max-request-size: 500MB
+
+server:
+  port: 8080
+  servlet:
+    context-path: /api
+
+mybatis:
+  mapper-locations: classpath:mapper/*.xml
+  type-aliases-package: com.scaffold.entity
+  configuration:
+    map-underscore-to-camel-case: true
+
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+
+app:
+  jwt:
+    secret: change-this-secret-key-to-a-long-random-string-in-production
+    expiration-ms: 86400000
+  upload:
+    path: uploads

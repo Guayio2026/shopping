@@ -1,0 +1,485 @@
+/* 后台管理：卡片 / 工具栏 / 表格质感 */
+
+.layout .main {
+  padding: 22px 26px 28px;
+  background:
+    radial-gradient(1200px 420px at 0% 0%, rgba(59, 130, 246, 0.06), transparent 55%),
+    radial-gradient(900px 380px at 100% 0%, rgba(99, 102, 241, 0.05), transparent 50%),
+    var(--app-page-bg, #f5f7fa);
+}
+
+.layout .page .panel.el-card,
+.layout .panel.el-card {
+  border: 1px solid rgba(15, 23, 42, 0.06) !important;
+  border-radius: 16px !important;
+  background: linear-gradient(180deg, #ffffff 0%, #fbfcfd 100%);
+  box-shadow:
+    0 10px 28px rgba(15, 23, 42, 0.05),
+    0 1px 2px rgba(15, 23, 42, 0.03);
+  overflow: hidden;
+}
+
+.layout .panel.el-card > .el-card__header {
+  padding: 18px 22px;
+  border-bottom: 1px solid rgba(15, 23, 42, 0.06);
+  background:
+    linear-gradient(105deg, rgba(59, 130, 246, 0.05) 0%, transparent 42%),
+    linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+}
+
+.layout .panel.el-card > .el-card__body {
+  padding: 18px 20px 20px;
+}
+
+.layout .header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.layout .header-row > span:first-child,
+.layout .header-row > .title,
+.layout .header-row > div:first-child .title {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  margin: 0;
+  padding-left: 14px;
+  font-size: 17px;
+  font-weight: 780;
+  color: #0f172a;
+  letter-spacing: 0.06em;
+  line-height: 1.25;
+}
+
+.layout .header-row > span:first-child::before,
+.layout .header-row > .title::before,
+.layout .header-row > div:first-child .title::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 3.5px;
+  height: 1.05em;
+  border-radius: 999px;
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--app-primary, #3b82f6) 55%, #ffffff) 0%,
+    var(--app-primary, #3b82f6) 48%,
+    color-mix(in srgb, var(--app-primary, #3b82f6) 72%, #0f172a) 100%
+  );
+  box-shadow:
+    0 6px 14px color-mix(in srgb, var(--app-primary, #3b82f6) 35%, transparent),
+    inset 0 1px 0 rgba(255, 255, 255, 0.45);
+}
+
+.layout .header-row > span:first-child::after,
+.layout .header-row > .title::after,
+.layout .header-row > div:first-child .title::after {
+  content: '';
+  position: absolute;
+  left: 14px;
+  right: -2px;
+  bottom: -5px;
+  height: 6px;
+  border-radius: 999px;
+  background: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--app-primary, #3b82f6) 18%, transparent),
+    transparent
+  );
+  pointer-events: none;
+}
+
+.layout .header-row > div:first-child {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.layout .header-row .subtitle {
+  margin: 0;
+  padding-left: 14px;
+  font-size: 12px;
+  font-weight: 500;
+  color: #94a3b8;
+  letter-spacing: 0.02em;
+  line-height: 1.4;
+}
+
+.layout .toolbar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 16px;
+  padding: 12px;
+  border-radius: 14px;
+  background: linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%);
+  border: 1px solid rgba(15, 23, 42, 0.05);
+}
+
+.layout .toolbar .el-input,
+.layout .toolbar .el-select {
+  --el-border-radius-base: 10px;
+}
+
+.layout .toolbar .el-input__wrapper,
+.layout .toolbar .el-select__wrapper {
+  border-radius: 10px !important;
+  box-shadow: 0 0 0 1px rgba(15, 23, 42, 0.08) inset !important;
+  background: #fff !important;
+  min-height: 36px;
+}
+
+.layout .toolbar .el-input__wrapper.is-focus,
+.layout .toolbar .el-select__wrapper.is-focused {
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--app-primary, #3b82f6) 55%, transparent) inset,
+    0 0 0 3px color-mix(in srgb, var(--app-primary, #3b82f6) 14%, transparent) !important;
+}
+
+.layout .toolbar .el-button,
+.layout .header-row .el-button {
+  border-radius: 10px !important;
+  font-weight: 650;
+  height: 36px;
+  padding: 0 16px;
+}
+
+.layout .header-row .el-button--primary {
+  border: 0 !important;
+  --el-button-bg-color: var(--app-primary, #3b82f6);
+  --el-button-border-color: var(--app-primary, #3b82f6);
+  --el-button-hover-bg-color: var(--el-color-primary-light-3);
+  --el-button-hover-border-color: var(--el-color-primary-light-3);
+  --el-button-active-bg-color: var(--el-color-primary-dark-2);
+  --el-button-active-border-color: var(--el-color-primary-dark-2);
+  background: var(--app-primary, #3b82f6) !important;
+  box-shadow:
+    0 10px 18px color-mix(in srgb, var(--app-primary, #3b82f6) 28%, transparent),
+    inset 0 1px 0 rgba(255, 255, 255, 0.28);
+}
+
+.layout .header-row .el-button--primary:hover,
+.layout .header-row .el-button--primary:focus {
+  background: var(--el-color-primary-light-3) !important;
+  filter: none;
+  transform: translateY(-1px);
+  box-shadow:
+    0 12px 22px color-mix(in srgb, var(--app-primary, #3b82f6) 34%, transparent),
+    inset 0 1px 0 rgba(255, 255, 255, 0.34);
+}
+
+.layout .header-row .el-button--primary:active {
+  background: var(--el-color-primary-dark-2) !important;
+  transform: translateY(0);
+}
+
+/* —— Table —— */
+.layout .el-table {
+  --el-table-border-color: transparent;
+  --el-table-header-bg-color: transparent;
+  --el-table-row-hover-bg-color: color-mix(in srgb, var(--app-primary, #3b82f6) 6%, #ffffff);
+  --el-table-bg-color: transparent;
+  --el-table-tr-bg-color: transparent;
+  --el-table-header-text-color: #64748b;
+  --el-table-text-color: #1e293b;
+  border-radius: 14px;
+  overflow: hidden;
+  background: transparent !important;
+}
+
+.layout .el-table::before,
+.layout .el-table::after,
+.layout .el-table__inner-wrapper::before {
+  display: none !important;
+}
+
+.layout .el-table__header-wrapper {
+  border-radius: 12px 12px 0 0;
+  overflow: hidden;
+}
+
+.layout .el-table th.el-table__cell {
+  background: linear-gradient(180deg, #f8fafc 0%, #eef2f7 100%) !important;
+  border-bottom: 1px solid rgba(15, 23, 42, 0.06) !important;
+  color: #64748b !important;
+  font-size: 12px;
+  font-weight: 700 !important;
+  letter-spacing: 0.04em;
+  text-transform: none;
+  padding: 12px 0 !important;
+}
+
+.layout .el-table th.el-table__cell .cell {
+  color: #64748b;
+  padding: 0 12px;
+  line-height: 1.4;
+}
+
+.layout .el-table td.el-table__cell {
+  border-bottom: 1px solid rgba(15, 23, 42, 0.045) !important;
+  padding: 12px 0 !important;
+  font-size: 13.5px;
+}
+
+.layout .el-table td.el-table__cell .cell {
+  padding: 0 12px;
+  line-height: 1.45;
+}
+
+.layout .el-table .el-table__row:last-child td.el-table__cell {
+  border-bottom: none !important;
+}
+
+.layout .el-table--striped .el-table__body tr.el-table__row--striped td.el-table__cell {
+  background: #f8fafc !important;
+}
+
+.layout .el-table__body tr:hover > td.el-table__cell {
+  background: color-mix(in srgb, var(--app-primary, #3b82f6) 6%, #ffffff) !important;
+}
+
+/* 固定列必须实底，否则横向滚动时数字/标签会叠到操作列上 */
+.layout .el-table__fixed,
+.layout .el-table__fixed-right {
+  background: #fff !important;
+}
+
+.layout .el-table__fixed-right::before,
+.layout .el-table__fixed::before {
+  background-color: transparent !important;
+}
+
+.layout .el-table__fixed .el-table__header th.el-table__cell,
+.layout .el-table__fixed-right .el-table__header th.el-table__cell {
+  background: linear-gradient(180deg, #f8fafc 0%, #eef2f7 100%) !important;
+}
+
+.layout .el-table__fixed .el-table__body td.el-table__cell,
+.layout .el-table__fixed-right .el-table__body td.el-table__cell {
+  background: #fff !important;
+}
+
+.layout .el-table--striped .el-table__fixed .el-table__body tr.el-table__row--striped td.el-table__cell,
+.layout .el-table--striped .el-table__fixed-right .el-table__body tr.el-table__row--striped td.el-table__cell {
+  background: #f8fafc !important;
+}
+
+.layout .el-table__fixed .el-table__body tr:hover > td.el-table__cell,
+.layout .el-table__fixed-right .el-table__body tr:hover > td.el-table__cell {
+  background: color-mix(in srgb, var(--app-primary, #3b82f6) 6%, #ffffff) !important;
+}
+
+.layout .el-table__fixed-right-patch {
+  background: #eef2f7 !important;
+}
+
+/* Element Plus 新版固定列（贴在单元格上）同样需要实底 */
+.layout .el-table .el-table-fixed-column--left,
+.layout .el-table .el-table-fixed-column--right {
+  background: #fff !important;
+}
+
+.layout .el-table--striped .el-table__body tr.el-table__row--striped .el-table-fixed-column--left,
+.layout .el-table--striped .el-table__body tr.el-table__row--striped .el-table-fixed-column--right {
+  background: #f8fafc !important;
+}
+
+.layout .el-table__body tr:hover > .el-table-fixed-column--left,
+.layout .el-table__body tr:hover > .el-table-fixed-column--right {
+  background: #eef4ff !important;
+}
+
+.layout .el-table__header .el-table-fixed-column--left,
+.layout .el-table__header .el-table-fixed-column--right {
+  background: linear-gradient(180deg, #f8fafc 0%, #eef2f7 100%) !important;
+}
+
+/* Tags */
+.layout .el-table .el-tag {
+  border-radius: 999px !important;
+  border: 0 !important;
+  height: 26px;
+  padding: 0 10px;
+  font-weight: 650;
+  font-size: 12px;
+}
+
+.layout .el-table .el-tag--primary {
+  background: rgba(59, 130, 246, 0.12);
+  color: #2563eb;
+}
+
+.layout .el-table .el-tag--success {
+  background: rgba(16, 185, 129, 0.12);
+  color: #059669;
+}
+
+.layout .el-table .el-tag--warning {
+  background: rgba(245, 158, 11, 0.14);
+  color: #d97706;
+}
+
+.layout .el-table .el-tag--danger {
+  background: rgba(239, 68, 68, 0.12);
+  color: #dc2626;
+}
+
+.layout .el-table .el-tag--info {
+  background: rgba(100, 116, 139, 0.12);
+  color: #475569;
+}
+
+/* Avatar */
+.layout .el-table .el-avatar {
+  border: 2px solid #fff;
+  box-shadow: 0 4px 10px rgba(15, 23, 42, 0.1);
+  background: linear-gradient(145deg, #e2e8f0, #cbd5e1);
+  color: #334155;
+  font-weight: 700;
+}
+
+/* Operation links — 紧凑文字操作，避免色块换行 */
+.layout .el-table .el-button.is-link {
+  margin: 0;
+  padding: 0 7px;
+  height: 26px;
+  min-height: 26px;
+  border-radius: 6px;
+  font-weight: 600;
+  font-size: 13px;
+  background: transparent !important;
+}
+
+.layout .el-table .el-button.is-link + .el-button.is-link {
+  position: relative;
+}
+
+.layout .el-table .el-button.is-link + .el-button.is-link::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 50%;
+  width: 1px;
+  height: 12px;
+  transform: translateY(-50%);
+  background: rgba(15, 23, 42, 0.1);
+}
+
+.layout .el-table .el-button.is-link.el-button--primary {
+  color: var(--app-primary, #3b82f6);
+}
+
+.layout .el-table .el-button.is-link.el-button--primary:hover {
+  color: var(--el-color-primary-dark-2, #1d4ed8);
+  background: color-mix(in srgb, var(--app-primary, #3b82f6) 8%, transparent) !important;
+}
+
+.layout .el-table .el-button.is-link.el-button--danger {
+  color: #ef4444;
+}
+
+.layout .el-table .el-button.is-link.el-button--danger:hover {
+  color: #dc2626;
+  background: rgba(239, 68, 68, 0.08) !important;
+}
+
+.layout .el-table .table-ops {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: nowrap;
+  white-space: nowrap;
+  gap: 2px;
+}
+
+.layout .el-table .cell-empty {
+  color: #94a3b8;
+}
+
+.layout .toolbar {
+  margin-bottom: 14px;
+}
+
+/* Pagination */
+.layout .pager {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 18px;
+  padding-top: 14px;
+  border-top: 1px solid rgba(15, 23, 42, 0.05);
+}
+
+.layout .pager .el-pagination {
+  --el-pagination-button-bg-color: #fff;
+  font-weight: 550;
+}
+
+.layout .pager .el-pager li,
+.layout .pager .btn-prev,
+.layout .pager .btn-next {
+  border-radius: 9px !important;
+  min-width: 32px;
+  height: 32px;
+  font-weight: 650;
+}
+
+.layout .pager .el-pager li.is-active {
+  background: var(--app-primary, #3b82f6) !important;
+  color: #fff !important;
+  box-shadow: 0 8px 14px color-mix(in srgb, var(--app-primary, #3b82f6) 28%, transparent);
+}
+
+/* Nested small tables inside dialogs stay compact but inherit soft header */
+.layout .el-dialog .el-table th.el-table__cell {
+  padding: 10px 0 !important;
+}
+
+.layout .el-dialog .el-table td.el-table__cell {
+  padding: 10px 0 !important;
+}
+
+/* —— 后台表单标签对齐（含弹框外页面） —— */
+.layout .el-form:not(.el-form--label-top) .el-form-item {
+  align-items: flex-start;
+  margin-bottom: 16px;
+}
+
+.layout .el-form:not(.el-form--label-top) .el-form-item__label {
+  text-align: right !important;
+  justify-content: flex-end !important;
+  padding-right: 12px !important;
+  line-height: 32px !important;
+  height: auto !important;
+  font-weight: 650;
+  color: #334155;
+}
+
+.layout .el-form:not(.el-form--label-top) .el-form-item__content {
+  line-height: 32px;
+  min-height: 32px;
+}
+
+.layout .el-form-item.is-required:not(.is-no-asterisk) > .el-form-item__label::before {
+  margin-right: 2px;
+  color: #ef4444;
+  font-weight: 700;
+}
+
+.layout .el-form .el-radio-group {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  min-height: 32px;
+  gap: 4px 0;
+}
+
+.layout .el-form .image-upload,
+.layout .el-form .el-avatar {
+  vertical-align: top;
+}
