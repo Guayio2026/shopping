@@ -16,13 +16,24 @@
 | `node_modules` / `target` / `uploads` / `.idea` | 远端均为 **0**（成功排除）✅ |
 | 完成时间 | 2026-10-10 |
 
-**以后怎么更新代码**（项目里已配好，直接 3 条命令）：
+**以后怎么更新代码 —— 两种方式，任选其一：**
+
+**方式 A（推荐）：双击项目根目录的 `推送到GitHub.bat`**
+
+- 会先列出你改了哪些文件
+- 提示输入提交说明 → 回车后自动完成 `add + commit + push`
+- 不想写说明就直接回车，只推送已有提交
+
+**方式 B：自己敲命令**
 
 ```bash
 git add -A
 git commit -m "完成第八章收藏功能"
-git push
+NO_PROXY='*' GIT_TERMINAL_PROMPT=0 git -c http.proxy= -c https.proxy= -c http.sslVerify=false push
 ```
+
+> ⚠️ **注意**：直接 `git push`（不加那些参数）**会卡住**！
+> 因为环境变量里有代理在干扰，必须用 `NO_PROXY='*'` 显式绕开。详见 6.1 节。
 
 ---
 
@@ -211,14 +222,35 @@ cd "E:/BaiduNetdiskDownload/SpringBoot3+Vue3项目基础脚手架/SpringBoot3+Vu
 
 ### 6.1 网络配置（⭐ 最重要的一步：**禁用代理，走直连**）
 
-**已经帮你配好了，写进项目级配置（`.git/config`），以后裸 `git push` 直接可用：**
+**已经帮你配好了，写进项目级配置（`.git/config`）：**
 
 ```bash
-git config --local http.proxy ""                              # 禁用代理
+git config --local http.proxy ""                              # 禁用代理（写进 git 配置）
 git config --local http.https://github.com/.sslVerify false    # 只对 github.com 关校验
 ```
 
-验证：不带任何参数、不设环境变量，直接 `git push` → `Everything up-to-date`（成功）✅
+⚠️ **但光靠这两条还不够** —— 环境变量里的 `http_proxy` 依然会干扰，
+所以推送时**必须加 `NO_PROXY='*'`**（或者直接用 `推送到GitHub.bat`）。
+
+**本次真正跑通的命令（100% 有效，已验证推了两次）：**
+
+```bash
+NO_PROXY='*' no_proxy='*' GIT_TERMINAL_PROMPT=0 git \
+  -c http.proxy= -c https.proxy= -c http.sslVerify=false \
+  -c http.postBuffer=104857600 -c http.version=HTTP/1.1 \
+  push -u origin main
+```
+
+输出：
+```
+To https://github.com/Guayio2026/shopping.git
+   fca084c..8ce0114  main -> main
+branch 'main' set up to track 'origin/main'.
+```
+
+> 🧠 **经验教训**：`git push` 返回 `Everything up-to-date` **不代表配置对了** ——
+> 那时候可能只是「没有新提交可推」。**要验证通道是否真的通，必须有实际内容要推。**
+> （本次就踩了这个坑：先看到 up-to-date 以为好了，结果提交新文档后 push 又卡住。）
 
 #### 为什么要「禁用代理」而不是「配置代理」？
 
@@ -358,20 +390,26 @@ git push
 
 ---
 
-## 七、以后日常怎么用（3 条命令）
+## 七、以后日常怎么用
 
-> ✅ **项目里已经配好了**（代理已禁用、GitHub 证书校验已关、remote 已关联），
-> 所以下面这 3 条命令**直接就能用**，不需要加任何额外参数。
+### 🌟 最省事：双击 `推送到GitHub.bat`
 
-改完代码，想同步到 GitHub：
+项目根目录有个 **`推送到GitHub.bat`**，双击它就行：
+
+1. 它先列出你改了哪些文件
+2. 提示你输入这次改了什么（比如 `第八章 收藏功能`）
+3. 回车 → 自动完成提交 + 推送
+4. 不想提交、只想推送已有内容 → 直接回车跳过
+
+### 手动敲命令的话
 
 ```bash
 git add -A                          # 把所有改动放进暂存区
 git commit -m "完成第八章收藏功能"    # 存一个本地快照，引号里写这次改了什么
-git push                            # 推到 GitHub
+NO_PROXY='*' GIT_TERMINAL_PROMPT=0 git -c http.proxy= -c https.proxy= -c http.sslVerify=false push
 ```
 
-> 第二次之后不用再写 `-u origin main`，因为已经记住关联关系了。
+> ⚠️ 最后那条长命令**不能简化成 `git push`** —— 会被环境变量里的代理卡住。
 
 **看当前状态**（改了什么、有没有没提交的）：
 
