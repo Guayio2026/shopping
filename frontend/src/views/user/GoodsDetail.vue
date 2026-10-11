@@ -58,9 +58,13 @@
             >
               {{ goods.store ? '立即购买' : '已售罄' }}
             </el-button>
-            <el-button type="warning" plain @click="handleFav">
+            <el-button
+                :type="isCollect ? 'danger' : 'warning'"
+                plain
+                @click="handleFav"
+            >
               <el-icon :size="14"><Star /></el-icon>
-              <span>收藏</span>
+              <span>{{ isCollect ? '已收藏' : '收藏' }}</span>
             </el-button>
           </div>
         </div>
@@ -97,16 +101,20 @@ import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { ArrowLeft, Star } from '@element-plus/icons-vue'
 import { getPublicGoodsById } from '@/api/goodsPublic'
+import { checkCollect, toggleCollect } from '@/api/collect'
+import { useUserStore } from '@/stores/user'
 import { mediaUrl } from '@/utils/format'
 
 const route = useRoute()
 const router = useRouter()
+const userStore = useUserStore()
 
 const loading = ref(false)
 const notFound = ref(false)   // 商品不存在 / 已下架
 const goods = ref(null)       // null = 还没加载出来
 const num = ref(1)            // 购买数量
 const activeName = ref('goods')
+const isCollect = ref(false)  // 当前登录用户是否已收藏本商品（未登录恒为 false）
 
 /** 数量上限 = 库存。store 为 0 时兜底成 1，否则 max=0 < min=1 会报错 */
 const maxNum = computed(() => Math.max(Number(goods.value?.store) || 0, 1))
@@ -145,11 +153,48 @@ function handleBuy() {
   ElMessage.info('下单功能在第九章做，敬请期待')
 }
 
-function handleFav() {
-  ElMessage.info('收藏功能在第八章做，敬请期待')
+/**
+ * 查「当前用户收藏过这个商品没有」
+ *
+ * 【为什么要单独问一次】详情页的商品数据走 /public/goods/{id}（白名单接口），
+ * 那个接口拿不到用户身份，算不出 isCollect。所以收藏状态要单独调这个要登录的接口。
+ *
+ * 【为什么先判 token】没登录时调它必定 401，还会触发 request.js 的「跳登录页」逻辑，
+ * 游客一进详情页就被弹走。所以没登录就直接按「未收藏」，一个请求都不发。
+ */
+async function loadCollectState() {
+  if (!userStore.token) {
+    isCollect.value = false
+    return
+  }
+  try {
+    isCollect.value = await checkCollect(route.params.id)
+  } catch {
+    // token 过期等异常：收藏状态按「未收藏」处理，不打断详情页展示
+    isCollect.value = false
+  }
 }
 
-onMounted(loadGoods)
+/**
+ * 点「收藏 / 已收藏」按钮
+ *
+ * 未登录 → 先跳登录页（带 redirect，登录后回到本页）
+ * 已登录 → toggle：后端返回「操作后是否已收藏」，直接用它更新按钮状态
+ */
+async function handleFav() {
+  if (!userStore.token) {
+    router.push({ path: '/login', query: { redirect: route.fullPath } })
+    return
+  }
+  const collected = await toggleCollect(goods.value.id)
+  isCollect.value = collected
+  ElMessage.success(collected ? '收藏成功' : '已取消收藏')
+}
+
+onMounted(async () => {
+  await loadGoods()
+  loadCollectState()   // 商品加载完，再去问收藏状态
+})
 </script>
 
 <style scoped>
