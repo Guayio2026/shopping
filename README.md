@@ -2,7 +2,7 @@
 
 一个**前后端分离**的电商系统，包含后台管理系统和前台商城，正在跟教程一步步手写完成。
 
-> 🚧 **项目进行中**：目前完成到「前台商品详情页」，后续持续更新。
+> 🚧 **项目进行中**：目前完成到「商品收藏」，后续持续更新。
 
 ---
 
@@ -45,6 +45,7 @@
 | 商品管理 | 增删改查 + 多图上传 + 规格管理 + 富文本详情 |
 | 分类管理 | 增删改查 |
 | 轮播图管理 | 增删改查 + 关联商品 |
+| 收藏管理 | 只读列表（用户 / 商品 / 收藏时间）+ 分页 + 详情 / 删除 |
 | 用户管理 | 增删改查 |
 | 菜单管理 | 动态菜单（数据库驱动，`sys_menu` 表） |
 | 操作日志 | 记录与查询 |
@@ -57,10 +58,10 @@
 | 首页 | 轮播图 + 左侧分类导航 + 新品推荐 + 热销推荐 |
 | 全部商品 | 关键词搜索 + 分类筛选 + 分页 |
 | 商品详情 | 商品图文详情 + 购买须知 + 数量选择 |
+| 我的收藏 | 收藏的商品网格 + 取消收藏 + 空状态（需登录） |
 
 ### 🚧 计划中
 
-- 商品收藏
 - 购物车
 - 下单与订单管理
 
@@ -88,22 +89,18 @@ CREATE DATABASE shopping
 
 ### 第 2 步：配置数据库密码
 
-`backend/src/main/resources/application-dev.yml` 里的密码是**占位符**，需要改成你自己的：
+数据库密码**不写在 `application-dev.yml` 里**（那个文件是要提交到仓库的）。请在同目录新建一个
+`application-local.yml`（该文件已被 `.gitignore` 排除，不会上传），照 `application-local.yml.example` 抄：
 
 ```yaml
 spring:
   datasource:
-    url: jdbc:mysql://localhost:3306/shopping?...
-    username: root
-    password: your_password      # ← 改成你自己的 MySQL 密码
+    password: 你的MySQL密码
 ```
 
-> 💡 也可以不改这个文件，而是在同目录新建 `application-local.yml`（该文件已被 `.gitignore` 忽略）来覆盖：
-> ```yaml
-> spring:
->   datasource:
->     password: 你的密码
-> ```
+> ⚠️ **千万别**在 `application-dev.yml` 里加 `password:` 字段。
+> 那里的优先级**高于** `application.yml` 中 `spring.config.import` 导入的 `application-local.yml`，
+> 会把你的真实密码压掉，启动时直接报 `Access denied for user 'root'@'localhost'`，而且进程会立刻退出。
 
 ### 第 3 步：启动后端
 
@@ -179,7 +176,10 @@ springboot-vue-scaffold/
 
 **Q：数据库连不上 / 报 Access denied？**
 
-检查 `application-dev.yml`（或 `application-local.yml`）里的密码是否改成了你自己的。
+检查 `backend/src/main/resources/application-local.yml` 是否存在、里面的密码是不是你自己的。
+
+⚠️ 注意：**不要在 `application-dev.yml` 里加密码** —— 那里的优先级会压掉 `application-local.yml`，
+反而导致启动失败（详见「快速开始 · 第 2 步」）。
 
 **Q：上传的图片存在哪儿？**
 
@@ -198,6 +198,7 @@ springboot-vue-scaffold/
 | `第五章-前台首页-步骤.md` | 前台首页（轮播图 + 分类 + 新品热销） |
 | `第六章-全部商品页-步骤.md` | 商品列表（搜索 + 筛选 + 分页） |
 | `第七章-商品详情页-步骤.md` | 商品详情（图文 + 购买须知） |
+| `第八章-收藏模块-步骤.md` | 商品收藏（前台我的收藏 + 后台收藏管理） |
 | `上传GitHub流程.md` | 把项目推到 GitHub 的完整流程 |
 | `GitHub分支工作流.md` | 新章节怎么用分支 + Pull Request 开发 |
 
