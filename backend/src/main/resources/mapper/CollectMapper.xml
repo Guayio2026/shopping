@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.scaffold.mapper.CollectMapper">
+
+    <!-- 两个 resultMap 放这 -->
+    <!-- 平铺映射：id / userId / goodsId / time + JOIN 出来的 goodsName / userName
+         【给谁用】后台分页 findPage -->
+    <resultMap id="BaseResultMap" type="com.scaffold.entity.Collect">
+        <id property="id" column="id"/>
+        <result property="userId" column="user_id"/>
+        <result property="goodsId" column="goods_id"/>
+        <result property="time" column="time"/>
+        <result property="goodsName" column="goods_name"/>
+        <result property="userName" column="user_name"/>
+    </resultMap>
+
+    <!-- 嵌套映射：多一个 <association>，把商品各列装进 Collect.goods 对象
+         【给谁用】前台我的收藏 findByUser
+         ⚠️ 商品列一律加 g_ 前缀，避免和 collect.id / collect.user_id 撞名 -->
+    <resultMap id="WithGoodsMap" type="com.scaffold.entity.Collect">
+        <id property="id" column="id"/>
+        <result property="userId" column="user_id"/>
+        <result property="goodsId" column="goods_id"/>
+        <result property="time" column="time"/>
+        <association property="goods" javaType="com.scaffold.entity.Goods">
+            <id property="id" column="g_id"/>
+            <result property="name" column="g_name"/>
+            <result property="descr" column="g_descr"/>
+            <result property="cover" column="g_cover"/>
+            <result property="price" column="g_price"/>
+            <result property="store" column="g_store"/>
+            <result property="sales" column="g_sales"/>
+            <result property="state" column="g_state"/>
+        </association>
+    </resultMap>
+    <!-- 七条 SQL 放这 -->
+    <!-- 有没有收藏过（LIMIT 1 防历史脏数据返回多条） -->
+    <select id="findByUserAndGoods" resultMap="BaseResultMap">
+        SELECT id, user_id, goods_id, time
+        FROM collect
+        WHERE user_id = #{userId} AND goods_id = #{goodsId}
+        LIMIT 1
+    </select>
+
+    <!-- 我的收藏（LEFT JOIN 保证商品被删也能显示这条记录） -->
+    <select id="findByUser" resultMap="WithGoodsMap">
+        SELECT c.id, c.user_id, c.goods_id, c.time,
+        gd.id AS g_id, gd.name AS g_name, gd.descr AS g_descr,
+        gd.cover AS g_cover, gd.price AS g_price, gd.store AS g_store,
+        gd.sales AS g_sales, gd.state AS g_state
+        FROM collect c
+        LEFT JOIN goods gd ON c.goods_id = gd.id
+        WHERE c.user_id = #{userId}
+        ORDER BY c.id DESC
+    </select>
+
+    <!-- 后台分页数据：一条 SQL 带出用户名 + 商品名（不用循环查库） -->
+    <select id="findPage" resultMap="BaseResultMap">
+        SELECT c.id, c.user_id, c.goods_id, c.time,
+        u.nickname AS user_name,
+        gd.name    AS goods_name
+        FROM collect c
+        LEFT JOIN `user` u  ON c.user_id  = u.id
+        LEFT JOIN goods  gd ON c.goods_id = gd.id
+        ORDER BY c.id DESC
+        LIMIT #{limit} OFFSET #{offset}
+    </select>
+
+    <!-- 后台总条数 -->
+    <select id="countPage" resultType="long">
+        SELECT COUNT(*) FROM collect
+    </select>
+
+    <!-- 新增 -->
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO collect (user_id, goods_id, time)
+        VALUES (#{userId}, #{goodsId}, #{time})
+    </insert>
+
+    <!-- 删除（前后台共用） -->
+    <delete id="deleteById">
+        DELETE FROM collect WHERE id = #{id}
+    </delete>
+
+    <!-- 取消收藏 -->
+    <delete id="deleteByUserAndGoods">
+        DELETE FROM collect WHERE user_id = #{userId} AND goods_id = #{goodsId}
+    </delete>
+</mapper>

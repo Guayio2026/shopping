@@ -46,6 +46,16 @@ const routes = [
         component: () => import('@/views/user/GoodsDetail.vue'),
         meta: { public: true, title: '商品详情' }
       },
+      // ======== 我的收藏（第八章新增）========
+      // ⚠️ meta 里【不能】写 public: true —— 这页要登录才看得到自己的收藏
+      // ⚠️ requiresUser: true 决定未登录时跳 /login（而不是后台的 /admin/login），登录后回来
+      // ⚠️ path 不带开头斜杠（写成 '/collect' 就变成根路径 /collect，/user/collect 打不开了）
+      {
+        path: 'collect',
+        name: 'UserMyCollect',
+        component: () => import('@/views/user/MyCollect.vue'),
+        meta: { requiresAuth: true, requiresUser: true, title: '我的收藏' }
+      },
 
       {
         path: 'profile',
@@ -114,6 +124,15 @@ const routes = [
         name: 'AdminCarousels',
         component: () => import('@/views/Carousels.vue'),
         meta: { title: '轮播图2', admin: true }
+      },
+      // ======== 收藏管理（第八章新增）========
+      // ⚠️ 组件是 views/Collects.vue（后台，有 s），前台那页是 views/user/MyCollect.vue —— 别写混
+      // /admin 这层父路由已带 requiresAuth + requiresAdmin，子路由只写 title + admin 即可
+      {
+        path: 'collects',
+        name: 'AdminCollects',
+        component: () => import('@/views/Collects.vue'),
+        meta: { title: '收藏管理', admin: true }
       },
 
       {
