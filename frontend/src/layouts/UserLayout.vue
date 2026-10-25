@@ -63,7 +63,7 @@
 <script setup>
 import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { ArrowDown, Goods, HomeFilled, Star, User } from '@element-plus/icons-vue'
+import { ArrowDown, Goods, HomeFilled, Star, Tickets, User } from '@element-plus/icons-vue'
 import { useUserStore } from '@/stores/user'
 import { useSystemStore } from '@/stores/system'
 import { mediaUrl } from '@/utils/format'
@@ -79,6 +79,8 @@ const navItems = [
   { path: '/user/goods', title: '全部商品', icon: Goods },
   // 第八章新增：我的收藏（要登录 —— 游客点它会被路由守卫送去 /login）
   { path: '/user/collect', title: '我的收藏', icon: Star },
+  // 第九章新增：我的订单（同样要登录；下单成功后也会跳到这）
+  { path: '/user/orders', title: '我的订单', icon: Tickets },
   { path: '/user/profile', title: '个人中心', icon: User }
 ]
 

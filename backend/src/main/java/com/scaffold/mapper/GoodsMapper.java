@@ -87,4 +87,5 @@ public interface GoodsMapper {
 
     /** 根据 id 删除商品 → 对应 deleteById */
     int deleteById(@Param("id") Integer id);
+    int deductStoreAndAddSales(@Param("id") Integer id, @Param("nums") Integer nums);
 }

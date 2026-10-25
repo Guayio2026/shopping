@@ -57,6 +57,18 @@ const routes = [
         meta: { requiresAuth: true, requiresUser: true, title: '我的收藏' }
       },
 
+      // ======== 我的订单（第九章新增）========
+      // ⚠️ meta 里【不能】写 public: true —— 订单是隐私数据，必须登录才能看
+      // ⚠️ requiresUser: true 决定未登录时跳 /login（而不是后台的 /admin/login）
+      // ⚠️ path 不带开头斜杠（写成 '/orders' 会变成根路径，/user/orders 就打不开了）
+      // ⚠️ 组件在 views/user/ 目录下；后台那个订单页是 views/Orders.vue（没有 user/），别写混
+      {
+        path: 'orders',
+        name: 'UserMyOrders',
+        component: () => import('@/views/user/MyOrders.vue'),
+        meta: { requiresAuth: true, requiresUser: true, title: '我的订单' }
+      },
+
       {
         path: 'profile',
         name: 'UserProfile',
@@ -133,6 +145,16 @@ const routes = [
         name: 'AdminCollects',
         component: () => import('@/views/Collects.vue'),
         meta: { title: '收藏管理', admin: true }
+      },
+
+      // ======== 订单管理（第九章新增）========
+      // ⚠️ 组件是 views/Orders.vue（后台，没有 user/），前台那页是 views/user/MyOrders.vue —— 别写混
+      // ⚠️ /admin 这层父路由已带 requiresAuth + requiresAdmin，子路由只写 title + admin 即可
+      {
+        path: 'orders',
+        name: 'AdminOrders',
+        component: () => import('@/views/Orders.vue'),
+        meta: { title: '订单管理', admin: true }
       },
 
       {
