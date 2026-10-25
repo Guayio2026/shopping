@@ -1,0 +1,125 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.scaffold.mapper.OrdersMapper">
+
+    <!-- ==================== resultMap ==================== -->
+
+    <!-- 平铺版：只映射 orders 自己的 12 列
+         【给谁用】findById、countMine、countPage -->
+    <resultMap id="BaseResultMap" type="com.scaffold.entity.Orders">
+        <id     property="id"           column="id"/>
+        <result property="name"         column="name"/>
+        <result property="orderNo"      column="order_no"/>
+        <result property="goodsId"      column="goods_id"/>
+        <result property="price"        column="price"/>
+        <result property="nums"         column="nums"/>
+        <result property="userName"     column="user_name"/>
+        <result property="userPhone"    column="user_phone"/>
+        <result property="userAddress"  column="user_address"/>
+        <result property="time"         column="time"/>
+        <result property="state"        column="state"/>
+        <result property="userId"       column="user_id"/>
+    </resultMap>
+
+    <!-- 嵌套版①：我的订单 —— 在 BaseResultMap 基础上多一个 goods
+         extends = 继承上面 12 行，不用重写一遍
+         ⚠️ 商品列全加 g_ 前缀：orders 和 goods 都有 id，不起别名 JDBC 分不清 -->
+    <resultMap id="MineMap" type="com.scaffold.entity.Orders" extends="BaseResultMap">
+        <association property="goods" javaType="com.scaffold.entity.Goods">
+            <id     property="id"    column="g_id"/>
+            <result property="name"  column="g_name"/>
+            <result property="cover" column="g_cover"/>
+        </association>
+    </resultMap>
+
+    <!-- 嵌套版②：后台订单列表 —— goods + user 都要
+         ⚠️ orders.user_name 是【收货人】，用户昵称在 user.nickname，
+            所以必须别名成 u_nickname，不能也叫 user_name（会撞车）-->
+    <resultMap id="PageMap" type="com.scaffold.entity.Orders" extends="BaseResultMap">
+        <association property="goods" javaType="com.scaffold.entity.Goods">
+            <id     property="id"    column="g_id"/>
+            <result property="name"  column="g_name"/>
+            <result property="cover" column="g_cover"/>
+        </association>
+        <association property="user" javaType="com.scaffold.entity.User">
+            <id     property="id"       column="u_id"/>
+            <result property="nickname" column="u_nickname"/>
+        </association>
+    </resultMap>
+
+    <!-- ==================== 七条 SQL ==================== -->
+
+    <!-- ① 新增订单
+         ⚠️ 没有 state 列：建表时 DEFAULT '待付款'，不插就是默认值
+         ⚠️ useGeneratedKeys + keyProperty：插入后自增 id 回填到 orders.id -->
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO orders (name, order_no, goods_id, price, nums,
+        user_name, user_phone, user_address, time, user_id)
+        VALUES (#{name}, #{orderNo}, #{goodsId}, #{price}, #{nums},
+        #{userName}, #{userPhone}, #{userAddress}, #{time}, #{userId})
+    </insert>
+
+    <!-- ② 按 id 查一条（详情 / 删除前校验归属用） -->
+    <select id="findById" resultMap="BaseResultMap">
+        SELECT * FROM orders WHERE id = #{id}
+    </select>
+
+    <!-- ③ 我的订单：只查这个用户的
+         LEFT JOIN：商品被删了，订单记录照样显示（只是没封面图） -->
+    <select id="findMine" resultMap="MineMap">
+        SELECT o.*, gd.id AS g_id, gd.name AS g_name, gd.cover AS g_cover
+        FROM orders o
+        LEFT JOIN goods gd ON o.goods_id = gd.id
+        WHERE o.user_id = #{userId}
+        ORDER BY o.id DESC
+        LIMIT #{limit} OFFSET #{offset}
+    </select>
+
+    <!-- ④ 我的订单总条数 -->
+    <select id="countMine" resultType="long">
+        SELECT COUNT(*) FROM orders WHERE user_id = #{userId}
+    </select>
+
+    <!-- ⑤ 后台分页：全部订单，带商品封面 + 用户昵称
+         ⚠️ `user` 是 MySQL 保留字，必须加反引号，否则语法报错
+         ⚠️ <where>：两个搜索框都为空时，自动不加 WHERE、也不留多余的 AND；
+            手写 WHERE + <if> 会剩下一个光秃秃的 WHERE 直接报错 -->
+    <select id="findPage" resultMap="PageMap">
+        SELECT o.*, gd.id AS g_id, gd.name AS g_name, gd.cover AS g_cover,
+        u.id AS u_id, u.nickname AS u_nickname
+        FROM orders o
+        LEFT JOIN goods gd ON o.goods_id = gd.id
+        LEFT JOIN `user` u ON o.user_id = u.id
+        <where>
+            <if test="name != null and name != ''">
+                AND o.name LIKE CONCAT('%', #{name}, '%')
+            </if>
+            <if test="orderNo != null and orderNo != ''">
+                AND o.order_no LIKE CONCAT('%', #{orderNo}, '%')
+            </if>
+        </where>
+        ORDER BY o.id DESC
+        LIMIT #{limit} OFFSET #{offset}
+    </select>
+
+    <!-- ⑥ 后台总条数：筛选条件必须和 findPage 一字不差，不然页数会算错 -->
+    <select id="countPage" resultType="long">
+        SELECT COUNT(*) FROM orders o
+        <where>
+            <if test="name != null and name != ''">
+                AND o.name LIKE CONCAT('%', #{name}, '%')
+            </if>
+            <if test="orderNo != null and orderNo != ''">
+                AND o.order_no LIKE CONCAT('%', #{orderNo}, '%')
+            </if>
+        </where>
+    </select>
+
+    <!-- ⑦ 删除订单 -->
+    <delete id="deleteById">
+        DELETE FROM orders WHERE id = #{id}
+    </delete>
+
+</mapper>

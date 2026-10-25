@@ -241,4 +241,13 @@
     <delete id="deleteById">
         DELETE FROM goods WHERE id = #{id}
     </delete>
+    <!-- 下单扣库存 + 加销量（一条 SQL 原子完成）
+     AND store >= #{nums} 让 MySQL 自己把关：库存不够时受影响行数为 0，什么都不改
+     「先查再 update」的写法在两人同时下单时会超卖，所以用这种 -->
+    <update id="deductStoreAndAddSales">
+        UPDATE goods
+        SET store = store - #{nums}, sales = sales + #{nums}
+        WHERE id = #{id} AND store >= #{nums}
+    </update>
+
 </mapper>
