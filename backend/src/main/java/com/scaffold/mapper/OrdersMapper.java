@@ -59,4 +59,8 @@ public interface OrdersMapper {
 
     /** 按 id 删除订单 */
     int deleteById(@Param("id") Integer id);
+    // 把订单标记为已支付：条件更新，只有当前还是「待付款」才改
+    // 返回 1 = 改成功；返回 0 = 这单已经付过了（或状态被改过）
+    int markPaid(@Param("id") Integer id);
+
 }

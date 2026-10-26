@@ -6,6 +6,7 @@ import com.scaffold.entity.Goods;
 import com.scaffold.entity.Orders;
 import com.scaffold.mapper.GoodsMapper;
 import com.scaffold.mapper.OrdersMapper;
+import com.scaffold.mapper.UserMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -27,6 +28,7 @@ public class OrdersService {
 
     private final OrdersMapper ordersMapper;
     private final GoodsMapper goodsMapper;
+    private final UserMapper userMapper;
 
     /** 下单时间格式：和 goods.date / collect.time 保持一致 */
     private static final DateTimeFormatter TIME_FORMAT =
@@ -98,6 +100,59 @@ public class OrdersService {
 
         // ===== 6. 插订单（useGeneratedKeys 会把自增 id 回填到 orders.id）=====
         ordersMapper.insert(orders);
+    }
+
+    /**
+     * 余额支付 —— 本章第二个核心
+     *
+     * @param orderId 订单 id
+     * @param userId  当前登录用户 id，由 Controller 从 token 取
+     *
+     * 【@Transactional 为什么非加不可】
+     * 这里有两步写操作：扣余额（update user）和改订单状态（update orders）。
+     * 如果第二步失败而没事务，钱扣了、订单还是「待付款」——用户能拿这单再付一次。
+     * 加了事务后，任何一步抛异常，前面已经扣掉的钱自动回滚。
+     */
+    @Transactional
+    public void pay(Integer orderId, Long userId) {
+
+        // ===== 1. 查订单 =====
+        Orders orders = ordersMapper.findById(orderId);
+        if (orders == null) {
+            throw new BusinessException(404, "订单不存在");
+        }
+
+        // ===== 2. 只能付自己的单 =====
+        // 教程是 orders.getUserId() 直接拿去查用户 —— 那等于让前端决定「给谁扣钱」。
+        // userId 必须来自 token，再和订单上的下单人比对。
+        if (orders.getUserId() == null || !orders.getUserId().equals(userId)) {
+            throw new BusinessException(403, "只能支付自己的订单");
+        }
+
+        // ===== 3. 只有「待付款」能付 =====
+        // 已支付的再付一次就是重复扣钱。这里先友好地拦一道（并发下的兜底在下面 markPaid）
+        if (!"待付款".equals(orders.getState())) {
+            throw new BusinessException(400, "订单状态为「" + orders.getState() + "」，不能支付");
+        }
+
+        // ===== 4. 原子扣余额 =====
+        // 实际执行：UPDATE user SET account = account - ? WHERE id = ? AND account >= ?
+        // 余额不够时 MySQL 一行都不改、返回 0 行 —— 不用先查余额，
+        // 「先查够不够、再扣」中间有时间差，两人同时支付会扣成负数
+        int deducted = userMapper.deductAccount(userId, orders.getPrice());
+        if (deducted == 0) {
+            throw new BusinessException(400, "余额不足，请先在个人中心充值");
+        }
+
+        // ===== 5. 条件改状态（乐观锁）=====
+        // SQL 里带 AND state = '待付款'：两人同时付同一单，只有一个人能改成功，
+        // 另一个拿到 0 行 —— 这就是并发下的防重复支付
+        int updated = ordersMapper.markPaid(orderId);
+        if (updated == 0) {
+            // 抛异常 → 上面第 4 步扣的钱跟着回滚，不会白扣
+            // 【注意】异常在这里的作用不是「报个错」，而是「撤销前面已经做的事」
+            throw new BusinessException(409, "订单已支付或状态已变更，请刷新后重试");
+        }
     }
 
     /**

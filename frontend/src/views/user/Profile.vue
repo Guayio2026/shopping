@@ -94,6 +94,24 @@
           </el-form>
         </section>
 
+        <!-- 账户余额：充值入口（第十章） -->
+        <section class="panel wallet">
+          <div class="panel-head">
+            <div>
+              <p class="panel-kicker">Wallet</p>
+              <h3>账户余额</h3>
+              <p>充值后可到「我的订单」用余额直接支付</p>
+            </div>
+          </div>
+          <div class="wallet-row">
+            <div class="wallet-amount">
+              <span class="unit">¥</span>
+              <strong>{{ money(form.account) }}</strong>
+            </div>
+            <el-button type="warning" class="recharge-btn" @click="openRecharge">去充值</el-button>
+          </div>
+        </section>
+
         <section class="panel security">
           <div class="panel-head">
             <div>
@@ -127,13 +145,32 @@
         </section>
       </div>
     </div>
+
+    <!-- 充值弹窗：金额 + 支付方式（模拟充值，不接真实支付网关） -->
+    <el-dialog v-model="rechargeVisible" title="账户充值" width="420px" :close-on-click-modal="false">
+      <el-form label-width="80px">
+        <el-form-item label="充值金额">
+          <el-input v-model="rechargeForm.amount" placeholder="请输入金额（1 - 10000）" />
+        </el-form-item>
+        <el-form-item label="支付方式">
+          <el-radio-group v-model="rechargeForm.type">
+            <el-radio-button label="微信支付" />
+            <el-radio-button label="支付宝支付" />
+          </el-radio-group>
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="rechargeVisible = false">取 消</el-button>
+        <el-button type="primary" :loading="recharging" @click="submitRecharge">确 定</el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
 <script setup>
 import { computed, onMounted, reactive, ref } from 'vue'
 import { ElMessage } from 'element-plus'
-import { changePassword, updateProfile } from '@/api/auth'
+import { changePassword, recharge, updateProfile } from '@/api/auth'
 import { useUserStore } from '@/stores/user'
 import ImageUpload from '@/components/ImageUpload.vue'
 
@@ -150,8 +187,50 @@ const form = reactive({
   phone: '',
   avatar: '',
   role: '',
-  createdAt: ''
+  createdAt: '',
+  account: 0
 })
+
+// ===== 充值相关状态 =====
+const rechargeVisible = ref(false)
+const recharging = ref(false)
+const rechargeForm = reactive({ amount: '', type: '微信支付' })
+
+/** 金额格式化：100 → "100.00"（后端 account 是 double，直接显示会出现 100.0） */
+function money(v) {
+  const n = Number(v)
+  return Number.isFinite(n) ? n.toFixed(2) : '0.00'
+}
+
+/** 打开充值弹窗（每次重置输入） */
+function openRecharge() {
+  rechargeForm.amount = ''
+  rechargeForm.type = '微信支付'
+  rechargeVisible.value = true
+}
+
+/**
+ * 提交充值
+ * 后端只收「金额 + 支付方式」，余额由后端原子相加（前端绝不自己算余额再加）
+ * 返回的是充值后的最新 AccountProfile，直接拿去刷新页面
+ */
+async function submitRecharge() {
+  const amount = Number(rechargeForm.amount)
+  if (!Number.isFinite(amount) || amount <= 0) {
+    ElMessage.warning('请输入大于 0 的金额')
+    return
+  }
+  recharging.value = true
+  try {
+    const user = await recharge({ amount, type: rechargeForm.type })
+    form.account = user?.account ?? 0
+    if (userStore.user) userStore.user.account = form.account
+    ElMessage.success(`充值成功，当前余额 ¥${money(form.account)}`)
+    rechargeVisible.value = false
+  } finally {
+    recharging.value = false
+  }
+}
 
 const pwdForm = reactive({
   oldPassword: '',
@@ -207,6 +286,7 @@ function fillForm(user) {
   form.avatar = user?.avatar || ''
   form.role = user?.role || ''
   form.createdAt = user?.createdAt || ''
+  form.account = user?.account ?? 0
 }
 
 async function loadProfile() {
@@ -633,5 +713,41 @@ onMounted(loadProfile)
     padding: 22px 18px;
     border-radius: 22px;
   }
+}
+
+/* ===== 账户余额面板 ===== */
+.wallet-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 18px 22px;
+  border-radius: 18px;
+  background: linear-gradient(135deg, rgba(230, 57, 53, 0.08), rgba(255, 255, 255, 0.6));
+  border: 1px solid rgba(230, 57, 53, 0.12);
+}
+
+.wallet-amount {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+  color: var(--ink);
+}
+
+.wallet-amount .unit {
+  font-size: 16px;
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.wallet-amount strong {
+  font-size: 30px;
+  font-weight: 750;
+  letter-spacing: -0.02em;
+}
+
+.recharge-btn {
+  border-radius: 999px;
+  font-weight: 600;
 }
 </style>

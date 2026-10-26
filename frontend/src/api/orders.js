@@ -55,3 +55,7 @@ export function getOrderPage(params) {
 export function deleteOrder(id) {
   return request.delete(`/orders/${id}`)
 }
+// 余额支付：POST /api/orders/8/pay（不传金额，金额后端从订单里读）
+export function payOrder(id) {
+  return request.post(`/orders/${id}/pay`)
+}

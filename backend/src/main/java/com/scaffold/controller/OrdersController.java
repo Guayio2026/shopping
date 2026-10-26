@@ -73,6 +73,18 @@ public class OrdersController {
         return Result.ok();
     }
 
+    /**
+     * 余额支付：POST /api/orders/8/pay
+     * 只传订单 id；userId 由 requireLogin() 从 token 取（本类已有的私有方法）。
+     * 不用 POST 请求体：支付这件事没有别的参数可传，
+     * 金额由后端从订单里读（orders.price），前端传「付多少」那是给自己打折。
+     */
+    @PostMapping("/{id}/pay")
+    public Result<Void> pay(@PathVariable Integer id, HttpServletRequest request) {
+        ordersService.pay(id, requireLogin(request));
+        return Result.ok();
+    }
+
     /** 后台分页：GET /api/orders/page?page=1&size=10&name=&orderNo= */
     @GetMapping("/page")
     public Result<PageResult<Orders>> page(@RequestParam(defaultValue = "") String name,

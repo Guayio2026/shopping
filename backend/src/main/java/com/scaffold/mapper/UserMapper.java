@@ -36,6 +36,17 @@ public interface UserMapper {
 
     int addBalance(@Param("id") Long id, @Param("amount") BigDecimal amount);
 
+    // ===== 「账户余额 account」专用（充值 / 支付链路），见 UserMapper.xml 里的注释 =====
+
+    /** 充值：account = account + amount（原子） */
+    int addAccount(@Param("id") Long id, @Param("amount") Double amount);
+
+    /**
+     * 扣款：account = account - amount，仅当 account >= amount 时才执行（原子）
+     * @return 1 = 扣成功；0 = 余额不足（MySQL 一行都没更新）
+     */
+    int deductAccount(@Param("id")Long id, @Param("amount")Double amount);
+
     int deleteById(@Param("id") Long id);
 
     long countAll();

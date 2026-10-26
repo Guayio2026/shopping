@@ -18,6 +18,7 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import com.scaffold.dto.RechargeRequest;
 
 @RestController
 @RequestMapping
@@ -59,4 +60,12 @@ public class AuthController {
         authService.changePassword(accountId, accountType, body);
         return Result.ok();
     }
+    @PostMapping("/auth/recharge")
+    public Result<AccountProfile> recharge(HttpServletRequest request,
+                                           @Valid @RequestBody RechargeRequest body) {
+        Long accountId = AuthContext.getUserId(request);
+        String accountType = AuthContext.getAccountType(request);
+        return Result.ok(authService.recharge(accountId, accountType, body));
+    }
+
 }

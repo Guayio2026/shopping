@@ -18,4 +18,5 @@ public class AccountProfile {
     private String accountType;
     private Integer status;
     private LocalDateTime createdAt;
+    private Double account;
 }
