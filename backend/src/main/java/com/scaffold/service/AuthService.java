@@ -15,6 +15,7 @@ import com.scaffold.security.JwtUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
+import com.scaffold.dto.RechargeRequest;
 
 @Service
 @RequiredArgsConstructor
@@ -151,6 +152,51 @@ public class AuthService {
         userMapper.updatePassword(accountId, request.getNewPassword());
         sysLogService.log(user.getId(), user.getUsername(), "OPERATION", "用户认证", "修改密码", "用户修改登录密码");
     }
+    /**
+     * 账户充值（模拟充值：不接真实支付网关）
+     *
+     * @param accountId   当前登录账号 id —— Controller 从 token 取
+     * @param accountType 账号类型（ADMIN / USER）—— 同样来自 token
+     * @param request     充值请求体（金额 + 支付方式）
+     * @return 充值后的最新资料（含新余额），前端直接拿去刷新显示
+     */
+    public AccountProfile recharge(Long accountId, String accountType, RechargeRequest request) {
+
+        // 1. 管理员账号没有余额（admin 表没这个字段），不允许充值
+        if (ACCOUNT_ADMIN.equals(accountType)) {
+            throw new BusinessException("管理员账号不支持充值");
+        }
+
+        // 2. 金额校验（第二道关：第一道是 Controller 的 @Valid）
+        Double amount = request.getAmount();
+        if (amount == null || amount <= 0) {
+            throw new BusinessException("充值金额必须大于 0");
+        }
+        if (amount > 10000) {
+            throw new BusinessException("单次充值不能超过 10000 元");
+        }
+
+        // 3. 确认用户真的存在
+        User user = userMapper.findById(accountId);
+        if (user == null) {
+            throw new BusinessException(404, "用户不存在");
+        }
+
+        // 4. 原子加钱：UPDATE user SET account = account + ? WHERE id = ?
+        userMapper.addAccount(accountId, amount);
+
+        // 5. 记审计日志（try-catch：钱已到账，日志挂了不能让用户以为失败又充一次）
+        try {
+            sysLogService.log(user.getId(), user.getUsername(), "RECHARGE", "用户认证", "账户充值",
+                    String.format("充值 %.2f 元（%s）", amount,
+                            request.getType() == null ? "未指定" : request.getType()));
+        } catch (Exception ignored) {
+            // 日志表出问题也不能拦住用户充钱
+        }
+
+        // 6. 重查一次：addAccount 只改了数据库，内存里的 user 还是旧值
+        return toUserProfile(userMapper.findById(accountId));
+    }
 
     private LoginResponse buildAdminLoginResponse(Admin admin) {
         String token = jwtUtils.generateToken(admin.getId(), admin.getUsername(), ACCOUNT_ADMIN, ACCOUNT_ADMIN);
@@ -204,6 +250,7 @@ public class AuthService {
         profile.setAccountType(ACCOUNT_USER);
         profile.setStatus(user.getStatus());
         profile.setCreatedAt(user.getCreatedAt());
+        profile.setAccount(user.getAccount());
         return profile;
     }
 }

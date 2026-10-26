@@ -67,8 +67,15 @@
           </template>
         </el-table-column>
 
-        <el-table-column label="操作" width="90" fixed="right" align="center">
+        <el-table-column label="操作" width="150" fixed="right" align="center">
           <template #default="{ row }">
+            <!-- 只有待付款的订单才显示支付按钮（已支付的再点会被后端 409 拦住） -->
+            <el-button
+              v-if="row.state === '待付款'"
+              link
+              type="primary"
+              @click="handlePay(row)"
+            >支付</el-button>
             <el-button link type="danger" @click="handleDelete(row)">删除</el-button>
           </template>
         </el-table-column>
@@ -100,7 +107,7 @@ import { onMounted, reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Picture } from '@element-plus/icons-vue'
-import { deleteOrder, getMyOrders } from '@/api/orders'
+import { deleteOrder, getMyOrders, payOrder } from '@/api/orders'
 import { mediaUrl } from '@/utils/format'
 
 const router = useRouter()
@@ -116,9 +123,9 @@ function money(v) {
   return Number.isFinite(n) ? n.toFixed(2) : '0.00'
 }
 
-/** 订单状态 → 标签颜色（以后加了「已付款 / 已发货」在这里加分支） */
+/** 订单状态 → 标签颜色（以后加了「已发货 / 已完成」在这里加分支） */
 function stateTagType(state) {
-  if (state === '已付款') return 'success'
+  if (state === '已支付' || state === '已付款') return 'success'
   if (state === '已取消') return 'info'
   return 'warning'
 }
@@ -155,6 +162,28 @@ async function handleDelete(row) {
   await deleteOrder(row.id)
   ElMessage.success('已删除')
   loadOrders()
+}
+
+/**
+ * 余额支付
+ * ⚠️ 只传订单 id，金额由后端从订单里读（orders.price）——
+ *    前端就算改了 row.price 也没用，扣多少是后端说了算。
+ * ⚠️ 余额不足时后端返回 400「余额不足，请先在个人中心充值」，
+ *    request.js 拦截器会自动弹出来，这里不用自己写提示。
+ */
+async function handlePay(row) {
+  try {
+    await ElMessageBox.confirm(
+      `确认支付订单 ${row.orderNo}？金额 ¥${money(row.price)}`,
+      '确认支付',
+      { type: 'info' }
+    )
+  } catch {
+    return // 用户点了取消
+  }
+  await payOrder(row.id)
+  ElMessage.success('支付成功')
+  loadOrders() // 重新拉列表，状态变成「已支付」
 }
 
 function goGoods() {

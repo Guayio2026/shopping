@@ -14,12 +14,13 @@
         <result property="status" column="status"/>
         <result property="openid" column="openid"/>
         <result property="balance" column="balance"/>
+        <result property="account" column="account"/>
         <result property="createdAt" column="created_at"/>
         <result property="updatedAt" column="updated_at"/>
     </resultMap>
 
     <sql id="BaseColumns">
-        id, username, password, nickname, avatar, phone, role, status, openid, balance, created_at, updated_at
+        id, username, password, nickname, avatar, phone, role, status, openid, balance, account, created_at, updated_at
     </sql>
 
     <select id="findById" resultMap="UserResultMap">
@@ -64,6 +65,11 @@
         </where>
     </select>
 
+    <!--
+      insert 故意不写 account 列：建表时给了 DEFAULT 0，新用户不写就是 0，
+      这正是「默认值 0」的用武之地——少写一个字段，少一处出错可能。
+      注册时如果想显式给初始余额，在这里补一列即可。
+    -->
     <insert id="insert" useGeneratedKeys="true" keyProperty="id">
         INSERT INTO `user` (username, password, nickname, avatar, phone, role, status, openid, balance)
         VALUES (#{username}, #{password}, #{nickname}, #{avatar}, #{phone}, #{role}, #{status}, #{openid}, #{balance})
@@ -102,6 +108,27 @@
         UPDATE `user`
         SET balance = balance + #{amount}, updated_at = CURRENT_TIMESTAMP
         WHERE id = #{id}
+    </update>
+
+    <!-- ===== 以下两条是「账户余额 account」专用（充值 / 支付链路）=====
+         写法和上面 balance 两条完全一样，只是钱袋子换了名字。
+         核心思想：钱的增减必须走【原子 SQL】，不能「先查出来、在内存里加减、再整行写回」——
+         后者在两人同时充值时，后写回的会把先写回的覆盖掉（丢失更新）。 -->
+
+    <!-- 充值：余额 = 余额 + 金额。不用 AND 条件——加钱没有「加不进去」的可能 -->
+    <update id="addAccount">
+        UPDATE `user`
+        SET account = account + #{amount}, updated_at = CURRENT_TIMESTAMP
+        WHERE id = #{id}
+    </update>
+
+    <!-- 扣款：余额 = 余额 - 金额，但加了 AND account >= #{amount} 条件。
+         余额不够时 MySQL 直接不更新、返回 0 行，Service 靠返回值判断「余额不足」，
+         不用先查一次余额——少一次查询，也没有「查完到扣之间被人花掉」的时间差 -->
+    <update id="deductAccount">
+        UPDATE `user`
+        SET account = account - #{amount}, updated_at = CURRENT_TIMESTAMP
+        WHERE id = #{id} AND account >= #{amount}
     </update>
 
     <delete id="deleteById">

@@ -20,3 +20,8 @@ export function updateProfile(data) {
 export function changePassword(data) {
   return request.post('/auth/password', data)
 }
+// 账户充值：POST /api/auth/recharge，返回充值后的最新资料（含新余额）
+export function recharge(data) {
+  return request.post('/auth/recharge', data)
+}
+

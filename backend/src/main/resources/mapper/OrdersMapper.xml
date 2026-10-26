@@ -121,5 +121,14 @@
     <delete id="deleteById">
         DELETE FROM orders WHERE id = #{id}
     </delete>
+    <!-- 支付成功：条件更新（乐观锁）
+         只有「待付款」才能改成「已支付」，返回 0 行说明状态已经不是待付款了。
+         为什么不在 Java 里判断完直接 UPDATE？并发下两人同时点支付，
+         两边都会读到「待付款」，但数据库条件更新只能让一个成功 -->
+    <update id="markPaid">
+        UPDATE orders
+        SET state = '已支付'
+        WHERE id = #{id} AND state = '待付款'
+    </update>
 
 </mapper>
