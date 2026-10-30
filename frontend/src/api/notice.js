@@ -1,0 +1,17 @@
+import request from './request'
+
+export function getNoticePage(params) {
+    return request.get('/admin/notices', { params })
+}
+
+export function createNotice(data) {
+    return request.post('/admin/notices', data)
+}
+
+export function updateNotice(id, data) {
+    return request.put(`/admin/notices/${id}`, data)
+}
+
+export function deleteNotice(id) {
+    return request.delete(`/admin/notices/${id}`)
+}
