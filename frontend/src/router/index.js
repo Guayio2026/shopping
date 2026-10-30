@@ -128,14 +128,14 @@ const routes = [
         component: () => import('@/views/Goods.vue'),
         meta: { title: '商品管理', admin: true }
       },
-      // ======== 轮播图2（carousel 模块）========
+      // ======== 轮播图（carousel 模块）========
       // ⚠️ path 子路由不带开头斜杠（写 '/carousels' 会变成根路径，页面打不开）
       //      注意和上面那条 'banners'（现有轮播图管理）是两个不同的页面，别搞混
       {
         path: 'carousels',
         name: 'AdminCarousels',
         component: () => import('@/views/Carousels.vue'),
-        meta: { title: '轮播图2', admin: true }
+        meta: { title: '轮播图', admin: true }
       },
       // ======== 收藏管理（第八章新增）========
       // ⚠️ 组件是 views/Collects.vue（后台，有 s），前台那页是 views/user/MyCollect.vue —— 别写混
