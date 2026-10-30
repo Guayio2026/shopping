@@ -6,6 +6,7 @@ import com.scaffold.entity.Goods;
 import com.scaffold.entity.HomeBanner;
 import com.scaffold.entity.Type;
 import com.scaffold.service.HomeBannerService;
+import com.scaffold.service.NoticeService;
 import com.scaffold.service.SysConfigService;
 import com.scaffold.service.CarouselService;
 import com.scaffold.service.TypeService;
@@ -30,6 +31,7 @@ public class PublicController {
     private final CarouselService carouselService;
     private final TypeService typeService;
     private final GoodsService goodsService;
+    private final NoticeService noticeService;   // 第十一章：公告（首页展示用）
     @GetMapping("/system-config")
     public Result<Map<String, String>> systemConfig() {
         return Result.ok(sysConfigService.getPublicConfig());
@@ -59,6 +61,7 @@ public class PublicController {
         data.put("types", typeService.listAll());          // 分类（全部）
         data.put("timeGoods", goodsService.times());       // 新品上架 4 条
         data.put("salesGoods", goodsService.sales());      // 热销商品 4 条
+        data.put("notices", noticeService.listAll());      // 公告（全部，id 倒序 = 最新的在前）
         return Result.ok(data);
     }
 

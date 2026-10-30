@@ -20,6 +20,25 @@
       </div>
     </section>
 
+    <!-- ①.5 商城公告（第十一章新增）：折叠面板，点标题展开正文 -->
+    <section v-if="notices.length" class="block notice-block">
+      <header class="block-head">
+        <h2><i class="bar" />商城公告</h2>
+      </header>
+
+      <el-collapse v-model="activeNotice" class="notice-collapse">
+        <el-collapse-item v-for="(n, index) in notices" :key="n.id" :name="index">
+          <template #title>
+            <div class="notice-title-row">
+              <span class="notice-name">{{ n.name }}</span>
+              <span class="notice-time">{{ n.time }}</span>
+            </div>
+          </template>
+          <div class="notice-body">{{ n.content || '（无正文）' }}</div>
+        </el-collapse-item>
+      </el-collapse>
+    </section>
+
     <!-- ②③ 新品上架 / 热销商品：同一份模板，v-for 渲染两次 -->
     <section v-for="block in goodsBlocks" :key="block.title" class="block">
       <header class="block-head">
@@ -58,6 +77,8 @@ const carousels = ref([])
 const types = ref([])
 const timeGoods = ref([])
 const salesGoods = ref([])
+const notices = ref([])          // 公告列表（后端 /public/home 里的 notices）
+const activeNotice = ref([0])    // 默认展开第一条公告
 
 /** 价格：49 → "49.00"（后端 price 是 double，直接显示会出现 49.0 这种） */
 function money(v) {
@@ -91,12 +112,13 @@ function goDetail(id) {
 onMounted(async () => {
   loading.value = true
   try {
-    // ⚠️ request.js 已把 data 解包，这里拿到的就是 { carousels, types, timeGoods, salesGoods }
+    // ⚠️ request.js 已把 data 解包，这里拿到的就是 { carousels, types, timeGoods, salesGoods, notices }
     const data = await getHomeData()
     carousels.value = data?.carousels || []
     types.value = data?.types || []
     timeGoods.value = data?.timeGoods || []
     salesGoods.value = data?.salesGoods || []
+    notices.value = data?.notices || []
   } catch {
     /* 公开页：失败保持空数组，页面显示空状态，不弹错 */
   } finally {
@@ -285,6 +307,46 @@ onMounted(async () => {
 .goods-sales {
   font-size: 11px;
   color: var(--muted);
+}
+
+/* ===== 公告区块（第十一章） ===== */
+.notice-collapse {
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 0 16px;
+}
+
+/* 标题行：公告标题靠左，时间挤到最右 */
+.notice-title-row {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.notice-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ink);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.notice-time {
+  margin-left: auto;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+/* pre-wrap：保留正文里的换行（textarea 里敲的回车是 \n，默认会被 HTML 吃掉） */
+.notice-body {
+  white-space: pre-wrap;
+  font-size: 14px;
+  line-height: 1.8;
+  color: #4a4f57;
 }
 
 @media (max-width: 900px) {

@@ -156,6 +156,15 @@ const routes = [
         component: () => import('@/views/Orders.vue'),
         meta: { title: '订单管理', admin: true }
       },
+      // ======== 公告管理（第十一章新增）========
+      // ⚠️ path 不带开头斜杠（写成 '/notices' 会变成根路径，/admin/notices 就打不开了）
+      // ⚠️ 组件是 views/Notices.vue（后台页），前台首页是 views/user/Home.vue —— 别写混
+      {
+        path: 'notices',
+        name: 'AdminNotices',
+        component: () => import('@/views/Notices.vue'),
+        meta: { title: '公告管理', admin: true }
+      },
 
       {
         path: 'banners',
