@@ -53,3 +53,13 @@ export function updateGoods(id, data) {
 export function deleteGoods(id) {
   return request.delete(`/goods/${id}`)
 }
+
+/**
+ * 商品销量统计（后台首页 ECharts 饼图用）
+ *
+ * 返回：[{ name: '商品名', value: 128 }, ...]，按销量倒序前 10 条
+ * 对应后端 GoodsController.echarts()，完整地址 GET /api/goods/echarts
+ */
+export function getGoodsSalesStat() {
+  return request.get('/goods/echarts')
+}

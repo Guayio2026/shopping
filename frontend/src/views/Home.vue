@@ -49,6 +49,16 @@
         </template>
         <div ref="logChartRef" class="chart-box" />
       </el-card>
+
+      <!-- 第十二章：商品销量饼图（横跨整行，扇区标签才放得下） -->
+      <el-card shadow="never" class="chart-card chart-card--wide">
+        <template #header>
+          <div class="header-row">
+            <span>商品销量 Top 10</span>
+          </div>
+        </template>
+        <div ref="pieChartRef" class="chart-box chart-box--pie" />
+      </el-card>
     </section>
   </div>
 </template>
@@ -58,6 +68,7 @@ import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import * as echarts from 'echarts'
 import { Avatar, Tickets, User } from '@element-plus/icons-vue'
 import { getDashboardStats } from '@/api/dashboard'
+import { getGoodsSalesStat } from '@/api/goods'
 import { useUserStore } from '@/stores/user'
 import { useSystemStore } from '@/stores/system'
 import { useThemeStore } from '@/stores/theme'
@@ -78,8 +89,16 @@ const stats = ref({
 
 const userChartRef = ref()
 const logChartRef = ref()
+const pieChartRef = ref()
 let userChart
 let logChart
+let pieChart
+
+/** 商品销量统计（后端 /goods/echarts，形如 [{name, value}]） */
+const salesStat = ref([])
+
+/** 饼图配色：第一个用主题色，后面固定几个，保证扇区能区分开 */
+const PIE_COLORS = ['#3b82f6', '#22c55e', '#f59e0b', '#8b5cf6', '#06b6d4', '#ef4444', '#ec4899', '#84cc16', '#f97316', '#64748b']
 
 const statCards = computed(() => [
   { key: 'admin', label: '管理员数', value: stats.value.adminCount, icon: Avatar },
@@ -150,17 +169,78 @@ function buildTrendOption(title, points, isBar) {
   }
 }
 
+/**
+ * 商品销量饼图的 option（第十二章）
+ *
+ * 数据形状：salesStat = [{ name: '商品名', value: 128 }, ...]
+ * —— 这正好就是 ECharts 要的形状，所以 series.data 直接给它，不用转换。
+ *
+ * 几个让饼图"能看"的配置：
+ *   radius: ['38%','62%']  环形饼图，中间留白比实心饼更清爽，也方便放图例
+ *   legend.type: 'scroll'  商品名太长/太多时图例可以横向滚动，不会撑破卡片
+ *   label.formatter        扇区外显示「商品名 + 百分比」
+ *   emptyTitle             没有数据时在中间显示提示，而不是画个空白饼
+ */
+function buildPieOption() {
+  const data = (salesStat.value || []).map((item) => ({
+    name: item.name || '未命名商品',
+    value: Number(item.value || 0)
+  }))
+
+  return {
+    color: [primaryColor(), ...PIE_COLORS.slice(1)],
+    title: data.length
+      ? undefined
+      : {
+          text: '暂无销量数据',
+          left: 'center',
+          top: '44%',
+          textStyle: { color: '#94a3b8', fontSize: 13, fontWeight: 400 }
+        },
+    tooltip: { trigger: 'item', formatter: '{b}<br/>销量：{c}（{d}%）' },
+    legend: {
+      type: 'scroll',
+      bottom: 0,
+      icon: 'circle',
+      itemWidth: 8,
+      itemHeight: 8,
+      itemGap: 14,
+      textStyle: { color: '#64748b', fontSize: 12 }
+    },
+    series: [
+      {
+        name: '商品销量',
+        type: 'pie',
+        radius: ['38%', '62%'],
+        center: ['50%', '44%'],
+        avoidLabelOverlap: true,
+        itemStyle: { borderColor: '#fff', borderWidth: 2, borderRadius: 4 },
+        label: { color: '#64748b', fontSize: 11, formatter: '{b}\n{d}%' },
+        labelLine: { length: 10, length2: 8, lineStyle: { color: '#cbd5e1' } },
+        emphasis: { scale: true, scaleSize: 6 },
+        data
+      }
+    ]
+  }
+}
+
 function renderCharts() {
   if (!userChartRef.value || !logChartRef.value) return
   if (!userChart) userChart = echarts.init(userChartRef.value)
   if (!logChart) logChart = echarts.init(logChartRef.value)
   userChart.setOption(buildTrendOption('用户新增', stats.value.userTrend, true), true)
   logChart.setOption(buildTrendOption('日志量', stats.value.logTrend, false), true)
+
+  if (pieChartRef.value) {
+    if (!pieChart) pieChart = echarts.init(pieChartRef.value)
+    pieChart.setOption(buildPieOption(), true)
+  }
 }
 
 function handleResize() {
   userChart?.resize()
   logChart?.resize()
+  pieChart?.resize()
 }
 
 async function loadStats() {
@@ -173,6 +253,12 @@ async function loadStats() {
       logCount: data?.logCount || 0,
       userTrend: data?.userTrend || [],
       logTrend: data?.logTrend || []
+    }
+    // 销量统计单独 try：它挂了也不该让整个首页空白
+    try {
+      salesStat.value = (await getGoodsSalesStat()) || []
+    } catch {
+      salesStat.value = []
     }
     await nextTick()
     renderCharts()
@@ -198,8 +284,10 @@ onBeforeUnmount(() => {
   window.removeEventListener('resize', handleResize)
   userChart?.dispose()
   logChart?.dispose()
+  pieChart?.dispose()
   userChart = null
   logChart = null
+  pieChart = null
 })
 </script>
 
@@ -358,6 +446,16 @@ onBeforeUnmount(() => {
 .chart-box {
   height: 300px;
   width: 100%;
+}
+
+/* 第十二章：饼图卡片横跨两列（grid-column: 1 / -1 = 从第一列到最后一条线） */
+.chart-card--wide {
+  grid-column: 1 / -1;
+}
+
+/* 饼图比折线图多一行图例，高一点才不挤 */
+.chart-box--pie {
+  height: 360px;
 }
 
 .header-row {

@@ -2,6 +2,7 @@ package com.scaffold.service;
 
 import com.scaffold.common.BusinessException;
 import com.scaffold.common.PageResult;
+import com.scaffold.dto.NameCount;
 import com.scaffold.entity.Goods;
 import com.scaffold.mapper.GoodsMapper;
 import lombok.RequiredArgsConstructor;
@@ -112,6 +113,26 @@ public class GoodsService {
      */
     public List<Goods> sales() {
         return goodsMapper.findHot(HOME_LIMIT);
+    }
+
+    /**
+     * 商品销量统计（第十二章：后台首页 ECharts 饼图）
+     *
+     * 【谁在用】GoodsController.echarts() ← 前端 views/Home.vue 的饼图
+     *
+     * 【返回给前端】List<NameCount> → JSON 长这样：
+     *     [ {"name":"美味壹客全麦坚果欧包","value":128}, {"name":"小米耳机","value":96} ]
+     *   ECharts 饼图的 series.data 就是吃这个格式，前端拿到直接塞进去，不用再加工。
+     *
+     * 【和教程的差异】教程是「查出全部商品 → 遍历 → 一个个 set 进 JSONObject」，
+     * 本项目把"筛选 + 排序 + 只要两列"全放进 SQL（statSalesTop），
+     * Java 这边一行都不用循环 —— 这叫「让数据库干数据库擅长的事」。
+     *
+     * 【为什么只取 10 条】饼图扇区超过 10 个，标签就会互相压在一起看不清。
+     * 想看全部的话，把 10 改大或改成参数即可。
+     */
+    public List<NameCount> echarts() {
+        return goodsMapper.statSalesTop(10);
     }
 
     /**

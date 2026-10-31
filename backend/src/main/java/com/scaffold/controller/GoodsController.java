@@ -2,6 +2,7 @@ package com.scaffold.controller;
 
 import com.scaffold.common.PageResult;
 import com.scaffold.common.Result;
+import com.scaffold.dto.NameCount;
 import com.scaffold.entity.Goods;
 import com.scaffold.service.GoodsService;
 import lombok.RequiredArgsConstructor;
@@ -102,6 +103,21 @@ public class GoodsController {
     @GetMapping("/sales")
     public Result<List<Goods>> sales() {
         return Result.ok(goodsService.sales());
+    }
+
+    /**
+     * 【统计分析】GET /api/goods/echarts
+     *
+     * 谁在调：views/Home.vue（后台首页）的饼图 → api/goods.js 的 getGoodsSalesStat()
+     * 返回：[{name:'商品名', value:销量}, ...]，按销量倒序前 10 条
+     *
+     * ⚠️ 这个路径必须写在 getById 的 /{id} 之前吗？不必须 ——
+     *    Spring 匹配时「字面量路径」优先于「路径变量」，/goods/echarts 不会被当成 id="echarts"。
+     *    但仍然建议放在 /{id} 上面，因为人读代码时更顺。
+     */
+    @GetMapping("/echarts")
+    public Result<List<NameCount>> echarts() {
+        return Result.ok(goodsService.echarts());
     }
 
     /**
