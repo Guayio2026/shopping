@@ -250,4 +250,27 @@
         WHERE id = #{id} AND store >= #{nums}
     </update>
 
+    <!-- ==================== ECharts 统计分析（第十二章） ==================== -->
+
+    <!-- 【销量统计】接口 GoodsMapper.statSalesTop
+         链路：后台首页饼图 → GoodsController.echarts() → GoodsService.echarts() → 这里
+
+         为什么列名要 AS name / AS value：
+           ECharts 饼图只认 [{name:'商品名', value:1200}] 这个形状，
+           而 goods 表里叫 name / sales。SQL 里直接把 sales 别名成 value，
+           Java 那边就不用再遍历转换一遍（教程是在 Service 里用 JSONObject 一个个 set 的）。
+
+         三个筛选条件都是"教程没有、但不加就难看"的：
+           ① state = '上架'   —— 下架商品不该统计进销量图
+           ② sales > 0        —— 销量为 0 会变成看不见的扇区，图例还白占一行
+           ③ LIMIT #{limit}   —— 商品一多扇区就糊成一片，取 Top N -->
+    <select id="statSalesTop" resultType="com.scaffold.dto.NameCount">
+        SELECT g.name AS name, g.sales AS value
+        FROM goods g
+        WHERE g.state = '上架'
+          AND g.sales > 0
+        ORDER BY g.sales DESC
+        LIMIT #{limit}
+    </select>
+
 </mapper>

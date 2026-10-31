@@ -139,12 +139,18 @@
         SELECT COUNT(*) FROM `user`
     </select>
 
+    <!-- 【近 N 日新增用户】接口 UserMapper.countDailyCreated（后台首页柱状图）
+         ⚠️ GROUP BY 必须用「别名 name」，不能写 GROUP BY DATE(created_at)：
+            SELECT 里选的是 DATE_FORMAT(created_at,'%m-%d')，GROUP BY 里是 DATE(created_at)，
+            两者不是一个表达式，MySQL 5.7 默认开启 ONLY_FULL_GROUP_BY 会直接报
+            1055: Expression #1 of SELECT list is not in GROUP BY clause
+         ⚠️ ORDER BY 同理，不能写 DATE(created_at)，改用聚合 MIN(created_at) -->
     <select id="countDailyCreated" resultType="com.scaffold.dto.NameCount">
         SELECT DATE_FORMAT(created_at, '%m-%d') AS name, COUNT(*) AS value
         FROM `user`
         WHERE created_at &gt;= DATE_SUB(CURDATE(), INTERVAL #{days} - 1 DAY)
-        GROUP BY DATE(created_at)
-        ORDER BY DATE(created_at) ASC
+        GROUP BY name
+        ORDER BY MIN(created_at) ASC
     </select>
 
 </mapper>

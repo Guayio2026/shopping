@@ -1,5 +1,6 @@
 package com.scaffold.mapper;
 
+import com.scaffold.dto.NameCount;
 import com.scaffold.entity.Goods;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
@@ -88,4 +89,16 @@ public interface GoodsMapper {
     /** 根据 id 删除商品 → 对应 deleteById */
     int deleteById(@Param("id") Integer id);
     int deductStoreAndAddSales(@Param("id") Integer id, @Param("nums") Integer nums);
+
+    /**
+     * 商品销量统计（ECharts 饼图用）
+     *
+     * 【为什么返回 NameCount 而不是 Goods】
+     * ECharts 饼图只认 [{name:'商品名', value:1200}] 这种两字段结构，
+     * 查 20 列商品对象再丢掉 18 列是浪费。SQL 里直接 AS name / AS value，
+     * NameCount 正好是这两个字段，Service 拿到就能直接返给前端。
+     *
+     * @param limit 取前几条（饼图扇区别超过 10 个，否则标签会叠在一起）
+     */
+    List<NameCount> statSalesTop(@Param("limit") int limit);
 }
