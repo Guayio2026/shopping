@@ -45,12 +45,15 @@
         SELECT COUNT(*) FROM sys_log
     </select>
 
+    <!-- 【近 N 日日志量】接口 SysLogMapper.countDailyCreated（后台首页折线图）
+         ⚠️ GROUP BY 用别名 name、ORDER BY 用 MIN(created_at)，
+            否则 MySQL 5.7 的 ONLY_FULL_GROUP_BY 会报 1055（详见 UserMapper.xml 同款注释） -->
     <select id="countDailyCreated" resultType="com.scaffold.dto.NameCount">
         SELECT DATE_FORMAT(created_at, '%m-%d') AS name, COUNT(*) AS value
         FROM sys_log
         WHERE created_at &gt;= DATE_SUB(CURDATE(), INTERVAL #{days} - 1 DAY)
-        GROUP BY DATE(created_at)
-        ORDER BY DATE(created_at) ASC
+        GROUP BY name
+        ORDER BY MIN(created_at) ASC
     </select>
 
     <insert id="insert" useGeneratedKeys="true" keyProperty="id">
