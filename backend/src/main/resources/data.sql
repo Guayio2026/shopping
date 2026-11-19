@@ -9,7 +9,7 @@ SELECT 'user', 'user123', '演示用户', 'USER', 'https://picsum.photos/seed/us
 WHERE NOT EXISTS (SELECT 1 FROM `user` WHERE username = 'user');
 
 INSERT INTO sys_config (config_key, config_value, remark)
-SELECT 'system_name', 'Admin Scaffold', '系统名称'
+SELECT 'system_name', '日常集', '系统名称'
 WHERE NOT EXISTS (SELECT 1 FROM sys_config WHERE config_key = 'system_name');
 
 INSERT INTO sys_config (config_key, config_value, remark)
@@ -59,8 +59,8 @@ WHERE child.path IN (
 INSERT INTO home_banner (title, subtitle, cover, link_url, cta_text, sort_order, status)
 SELECT * FROM (
     SELECT
-        'Welcome to Admin Scaffold' AS title,
-        'Spring Boot 3 + Vue 3 管理后台脚手架' AS subtitle,
+        '欢迎来到日常集' AS title,
+        '浏览商城商品' AS subtitle,
         'https://images.unsplash.com/photo-1498050108023-c5249f4df085?auto=format&fit=crop&w=1600&q=80' AS cover,
         'https://example.com' AS link_url,
         '了解更多' AS cta_text,

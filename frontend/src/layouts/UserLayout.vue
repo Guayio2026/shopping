@@ -6,11 +6,10 @@
           <BrandLogo size="md" class="nav-brand-logo" />
           <span class="brand-text">
             <span class="brand-name">{{ systemStore.displayName }}</span>
-            <span class="brand-tagline">简洁高效 · 开箱即用</span>
           </span>
         </router-link>
 
-        <nav class="nav-links">
+        <nav class="nav-links" aria-label="商城导航">
           <router-link
             v-for="item in navItems"
             :key="item.path"
@@ -25,7 +24,7 @@
         <div class="nav-actions">
           <template v-if="isLoggedIn">
             <el-dropdown trigger="click" @command="onCommand">
-              <button type="button" class="user-chip">
+              <button type="button" class="user-chip" aria-label="账户菜单">
                 <el-avatar :size="34" :src="avatarSrc">{{ avatarFallback }}</el-avatar>
                 <span class="user-meta">
                   <span class="user-name">{{ displayName }}</span>
@@ -126,7 +125,7 @@ onUnmounted(() => {
   --line: #eceef2;
   --accent: #e63935;
   --accent-soft: rgba(230, 57, 53, 0.08);
-  --bg: #f7f8fa;
+  --bg: #f8f8f4;
   min-height: 100vh;
   color: var(--ink);
   background: var(--bg);
@@ -178,9 +177,7 @@ onUnmounted(() => {
   filter: drop-shadow(0 6px 14px rgba(230, 57, 53, 0.28));
 }
 
-.nav-brand-logo {
-  filter: drop-shadow(0 6px 14px rgba(230, 57, 53, 0.28));
-}
+.nav-brand-logo { filter: none; }
 
 .brand-logo svg {
   width: 100%;
@@ -387,13 +384,13 @@ onUnmounted(() => {
   }
 }
 
-@media (max-width: 640px) {
-  .nav-link span {
-    display: none;
-  }
-
-  .nav-link {
-    padding: 10px 12px;
-  }
+@media (max-width: 760px) {
+  .nav-inner { display: grid; grid-template-columns: minmax(0,1fr) auto; gap: 4px 12px; padding: 8px 16px 0; }
+  .brand-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .nav-actions { grid-column: 2; grid-row: 1; }
+  .nav-links { grid-column: 1 / -1; justify-content: space-between; gap: 0; }
+  .nav-link { flex: none; border-radius: 0; padding: 12px 4px; font-size: 13px; white-space: nowrap; }
+  .nav-link :deep(.el-icon) { display: none; }
+  .nav-link.router-link-active { background: transparent; box-shadow: inset 0 -2px currentColor; }
 }
 </style>

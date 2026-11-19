@@ -37,7 +37,7 @@ public interface OrdersMapper {
      * @param limit  每页几条
      */
     List<Orders> findMine(@Param("userId") Long userId,
-                          @Param("offset") int offset,
+                          @Param("offset") long offset,
                           @Param("limit") int limit);
 
     /** 我的订单总条数（分页用） */
@@ -50,15 +50,15 @@ public interface OrdersMapper {
      */
     List<Orders> findPage(@Param("name") String name,
                           @Param("orderNo") String orderNo,
-                          @Param("offset") int offset,
+                          @Param("offset") long offset,
                           @Param("limit") int limit);
 
     /** 后台总条数（筛选条件必须和 findPage 保持一致，不然分页页数会算错） */
     long countPage(@Param("name") String name,
                    @Param("orderNo") String orderNo);
 
-    /** 按 id 删除订单 */
-    int deleteById(@Param("id") Integer id);
+    int cancelPending(@Param("id") Integer id);
+    int hide(@Param("id") Integer id, @Param("userId") Long userId);
     // 把订单标记为已支付：条件更新，只有当前还是「待付款」才改
     // 返回 1 = 改成功；返回 0 = 这单已经付过了（或状态被改过）
     int markPaid(@Param("id") Integer id);

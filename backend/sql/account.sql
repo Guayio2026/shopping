@@ -10,10 +10,10 @@
 --    ⚠️ 本项目早就有 balance（decimal），本模块按教程另立 account，
 --      代码里只用 account 走「充值 / 支付」，balance 暂不参与
 ALTER TABLE `user`
-    ADD COLUMN `account` double NOT NULL DEFAULT 0 COMMENT '账户余额(教程命名,勿与accountType账号类型混淆)'
+    ADD COLUMN `account` DECIMAL(18,2) NOT NULL DEFAULT 0 COMMENT '账户余额(教程命名,勿与accountType账号类型混淆)'
     AFTER `balance`;
 
--- 2. 核对（应看到 account 一行，Type=double，Default=0）
+-- 2. 核对（应看到 account 一行，Type=DECIMAL(18,2)，Default=0）
 -- SHOW COLUMNS FROM `user` LIKE 'account';
 
 -- 3. 核对余额（充完值后看一眼）

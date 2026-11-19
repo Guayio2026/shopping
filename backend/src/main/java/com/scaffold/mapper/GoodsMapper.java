@@ -88,7 +88,9 @@ public interface GoodsMapper {
 
     /** 根据 id 删除商品 → 对应 deleteById */
     int deleteById(@Param("id") Integer id);
-    int deductStoreAndAddSales(@Param("id") Integer id, @Param("nums") Integer nums);
+    int reserveStock(@Param("id") Integer id, @Param("nums") Integer nums);
+    int restoreStock(@Param("id") Integer id, @Param("nums") Integer nums);
+    int addSales(@Param("id") Integer id, @Param("nums") Integer nums);
 
     /**
      * 商品销量统计（ECharts 饼图用）

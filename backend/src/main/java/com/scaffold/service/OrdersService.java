@@ -1,5 +1,7 @@
 package com.scaffold.service;
 
+import java.math.BigDecimal;
+
 import com.scaffold.common.BusinessException;
 import com.scaffold.common.PageResult;
 import com.scaffold.entity.Goods;
@@ -82,10 +84,10 @@ public class OrdersService {
             throw new BusinessException(400, "商品已下架，暂不能购买");
         }
 
-        // ===== 4. 扣库存 + 加销量（一条 SQL 原子完成）=====
+        // ===== 4. 预留库存（一条 SQL 原子完成）=====
         // SQL 里有 AND store >= #{nums}：库存不够时 MySQL 直接不更新，返回 0 行
         // 「先查出来在内存里减，再 update 写回」的写法在两人同时下单时会超卖，别用
-        int rows = goodsMapper.deductStoreAndAddSales(orders.getGoodsId(), orders.getNums());
+        int rows = goodsMapper.reserveStock(orders.getGoodsId(), orders.getNums());
         if (rows == 0) {
             // 商品名要在这里报出来，用户才知道是哪件买不了
             throw new BusinessException(400, goods.getName() + " 商品库存不足");
@@ -93,7 +95,7 @@ public class OrdersService {
 
         // ===== 5. 后端说了算的字段，全部覆盖前端传的值 =====
         orders.setName(goods.getName());                          // 商品名快照
-        orders.setPrice(goods.getPrice() * orders.getNums());     // 总价后端重算，不信前端的 price
+        orders.setPrice(goods.getPrice().multiply(BigDecimal.valueOf(orders.getNums())));     // 总价后端重算，不信前端的 price
         orders.setOrderNo(newOrderNo());                          // 订单号
         orders.setTime(LocalDateTime.now().format(TIME_FORMAT));  // 下单时间
         // state 不设：建表时给了 DEFAULT '待付款'
@@ -153,6 +155,9 @@ public class OrdersService {
             // 【注意】异常在这里的作用不是「报个错」，而是「撤销前面已经做的事」
             throw new BusinessException(409, "订单已支付或状态已变更，请刷新后重试");
         }
+        if (goodsMapper.addSales(orders.getGoodsId(), orders.getNums()) != 1) {
+            throw new BusinessException(409, "商品已删除，请取消订单");
+        }
     }
 
     /**
@@ -166,7 +171,7 @@ public class OrdersService {
 
     /** 我的订单（只查这个用户的） */
     public PageResult<Orders> mine(Long userId, int page, int size) {
-        int offset = (page - 1) * size;
+        long offset = pageOffset(page, size);
         long total = ordersMapper.countMine(userId);
         List<Orders> list = ordersMapper.findMine(userId, offset, size);
         return PageResult.of(total, list);
@@ -174,7 +179,7 @@ public class OrdersService {
 
     /** 后台分页（全部订单，可按商品名 / 订单号搜索） */
     public PageResult<Orders> page(String name, String orderNo, int page, int size) {
-        int offset = (page - 1) * size;
+        long offset = pageOffset(page, size);
         long total = ordersMapper.countPage(name, orderNo);
         List<Orders> list = ordersMapper.findPage(name, orderNo, offset, size);
         return PageResult.of(total, list);
@@ -189,22 +194,29 @@ public class OrdersService {
         return orders;
     }
 
-    /**
-     * 删除订单
-     *
-     * @param admin  当前账号是不是管理员。true = 后台入口（谁的单都能删）；
-     *                false = 前台入口（只能删自己的）
-     */
-    public void delete(Integer id, Long userId, boolean admin) {
-        Orders orders = ordersMapper.findById(id);
-        if (orders == null) {
-            throw new BusinessException(404, "订单不存在");
+    private long pageOffset(int page, int size) {
+        if (page < 1 || size < 1 || size > 100) {
+            throw new BusinessException(400, "页码至少为 1，每页数量应在 1 到 100 之间");
         }
-        // 先查再删，就是为了这一刻：确认这单确实是本人下的
-        // 判断 userId == null 是防历史脏数据直接 NPE
-        if (!admin && (orders.getUserId() == null || !orders.getUserId().equals(userId))) {
-            throw new BusinessException(403, "只能删除自己的订单");
+        return (page - 1L) * size;
+    }
+
+    @Transactional
+    public void cancel(Integer id, Long userId) {
+        Orders order = getById(id);
+        if (!userId.equals(order.getUserId())) {
+            throw new BusinessException(403, "只能取消自己的订单");
         }
-        ordersMapper.deleteById(id);
+        if (ordersMapper.cancelPending(id) != 1) {
+            throw new BusinessException(409, "只有待付款订单可以取消");
+        }
+        // 已删除的商品没有可恢复的库存，订单仍可取消。
+        goodsMapper.restoreStock(order.getGoodsId(), order.getNums());
+    }
+
+    public void hide(Integer id, Long userId) {
+        if (ordersMapper.hide(id, userId) == 0) {
+            throw new BusinessException(400, "只能移除自己的已取消或已付款订单");
+        }
     }
 }

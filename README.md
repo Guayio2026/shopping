@@ -1,4 +1,36 @@
-# SpringBoot3 + Vue3 电商项目
+# 日常集
+
+## 安装与升级
+
+以下路径从仓库根目录开始。后端和前端各用一个终端。
+
+**新库**：在 MySQL 客户端中执行以下命令，只用于空库。基础脚本会重建后台表。
+
+```sql
+CREATE DATABASE shopping CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+USE shopping;
+SOURCE backend/sql/admin_scaffold.sql
+SOURCE backend/sql/storefront.sql
+```
+
+**已有商城库**：备份并暂停应用写入，连接现用数据库，执行 `SOURCE backend/sql/upgrade_orders.sql`。脚本将金额统一为两位小数，按现存待付款订单修正销量。核对余额、订单总价和销量后启动新版。
+
+**后端**（8080）：在 `backend/src/main/resources/application-local.yml` 配置本机数据库凭据。
+
+```bash
+cd backend
+mvn spring-boot:run
+```
+
+**前端**（5173）：另开终端，从仓库根目录执行。
+
+```bash
+cd frontend
+npm ci
+npm run dev
+```
+
+## 项目介绍
 
 一个**前后端分离**的电商系统，包含后台管理系统和前台商城，正在跟教程一步步手写完成。
 

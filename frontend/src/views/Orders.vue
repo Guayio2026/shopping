@@ -94,7 +94,6 @@
           <template #default="{ row }">
             <div class="table-ops">
               <el-button link type="success" @click="openDetail(row)">详情</el-button>
-              <el-button link type="danger" @click="handleDelete(row)">删除</el-button>
             </div>
           </template>
         </el-table-column>
@@ -141,9 +140,8 @@
 
 <script setup>
 import { onMounted, reactive, ref } from 'vue'
-import { ElMessage, ElMessageBox } from 'element-plus'
 import { Picture } from '@element-plus/icons-vue'
-import { deleteOrder, getOrderPage } from '@/api/orders'
+import { getOrderPage } from '@/api/orders'
 import { mediaUrl } from '@/utils/format'
 
 const loading = ref(false)
@@ -162,7 +160,7 @@ function money(v) {
 
 /** 订单状态 → 标签颜色 */
 function stateTagType(state) {
-  if (state === '已付款') return 'success'
+  if (state === '已付款' || state === '已支付') return 'success'
   if (state === '已取消') return 'info'
   return 'warning'
 }
@@ -208,18 +206,6 @@ function handleReset() {
 function openDetail(row) {
   form.value = JSON.parse(JSON.stringify(row))
   detailVisible.value = true
-}
-
-/** 删除：后台入口，谁的单都能删（后端按 accountType 判断，不信前端） */
-async function handleDelete(row) {
-  try {
-    await ElMessageBox.confirm(`确认删除订单 ${row.orderNo} 吗？`, '确认删除', { type: 'warning' })
-  } catch {
-    return
-  }
-  await deleteOrder(row.id)
-  ElMessage.success('删除成功')
-  loadOrders()
 }
 
 onMounted(() => {

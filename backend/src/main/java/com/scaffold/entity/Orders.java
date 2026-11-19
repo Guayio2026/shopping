@@ -1,5 +1,7 @@
 package com.scaffold.entity;
 
+import java.math.BigDecimal;
+
 import lombok.Data;
 
 /**
@@ -32,7 +34,7 @@ public class Orders {
     private Integer goodsId;
 
     /** 订单总价 = 单价 × 数量（表列 price）→ 前端 row.price */
-    private Double price;
+    private BigDecimal price;
 
     /** 购买数量（表列 nums）→ 前端 row.nums */
     private Integer nums;

@@ -18,7 +18,7 @@ import org.springframework.web.bind.annotation.*;
  *  --------------------------------------------------------------------------------------
  *  详情页「立即购买」提交          → createOrder()      → create()    POST   /api/orders
  *  打开「我的订单」页 / 翻页       → getMyOrders()      → my()        GET    /api/orders/my
- *  订单列表点「删除」              → deleteOrder()      → delete()    DELETE /api/orders/8
+ *  订单列表点「移除」              → deleteOrder()      → hide()    DELETE /api/orders/8
  *  后台打开「订单管理」页 / 搜索   → getOrderPage()     → page()      GET    /api/orders/page
  *
  * 【权限】/orders/** 不在 WebMvcConfig 的白名单里 → JWT 拦截器自动要求登录。
@@ -38,7 +38,7 @@ public class OrdersController {
      */
     @PostMapping
     public Result<Void> create(@RequestBody Orders orders, HttpServletRequest request) {
-        ordersService.create(orders, requireLogin(request));
+        ordersService.create(orders, requireBuyer(request));
         return Result.ok();
     }
 
@@ -56,21 +56,29 @@ public class OrdersController {
     public Result<Orders> detail(@PathVariable Integer id, HttpServletRequest request) {
         Orders orders = ordersService.getById(id);
         // 不是管理员，就只能看自己的单（不然改个数字就能看别人的收货信息）
-        if (!isAdmin(request) && !orders.getUserId().equals(requireLogin(request))) {
+        if (!isAdmin(request) && !requireLogin(request).equals(orders.getUserId())) {
             throw new BusinessException(403, "无权查看该订单");
         }
         return Result.ok(orders);
     }
 
-    /**
-     * 删除：DELETE /api/orders/{id}
-     * 前台入口 admin=false（只能删自己的）；后台入口 admin=true（谁都能删）。
-     * 用「当前账号是不是 ADMIN」来区分，而不是让前端传一个 admin 参数——那也能伪造。
-     */
-    @DeleteMapping("/{id}")
-    public Result<Void> delete(@PathVariable Integer id, HttpServletRequest request) {
-        ordersService.delete(id, requireLogin(request), isAdmin(request));
+    @PostMapping("/{id}/cancel")
+    public Result<Void> cancel(@PathVariable Integer id, HttpServletRequest request) {
+        ordersService.cancel(id, requireBuyer(request));
         return Result.ok();
+    }
+
+    @DeleteMapping("/{id}")
+    public Result<Void> hide(@PathVariable Integer id, HttpServletRequest request) {
+        ordersService.hide(id, requireBuyer(request));
+        return Result.ok();
+    }
+
+    private Long requireBuyer(HttpServletRequest request) {
+        if (isAdmin(request)) {
+            throw new BusinessException(403, "请使用买家账号操作订单");
+        }
+        return requireLogin(request);
     }
 
     /**
@@ -81,7 +89,7 @@ public class OrdersController {
      */
     @PostMapping("/{id}/pay")
     public Result<Void> pay(@PathVariable Integer id, HttpServletRequest request) {
-        ordersService.pay(id, requireLogin(request));
+        ordersService.pay(id, requireBuyer(request));
         return Result.ok();
     }
 

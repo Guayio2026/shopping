@@ -17,72 +17,37 @@
   <div class="my-orders">
     <!-- ① 顶部：标题 + 件数 -->
     <header class="order-head">
-      <h1><i class="bar" />我的订单</h1>
+      <h1>我的订单</h1>
       <span v-if="total" class="count">共 {{ total }} 笔</span>
     </header>
 
-    <el-card shadow="never" class="panel">
-      <!-- ② 订单表格 -->
-      <el-table v-loading="loading" :data="list" stripe>
-        <!-- 商品列：封面 + 名称（名称点进去可以跳到商品详情） -->
-        <el-table-column label="商品" min-width="220" show-overflow-tooltip>
-          <template #default="{ row }">
-            <div class="goods-cell">
-              <el-image
-                v-if="row.goods?.cover"
-                class="goods-cover"
-                :src="mediaUrl(row.goods.cover)"
-                :preview-src-list="[mediaUrl(row.goods.cover)]"
-                fit="cover"
-              />
-              <div v-else class="goods-cover no-cover">
-                <el-icon :size="18"><Picture /></el-icon>
-              </div>
-              <span class="goods-name">{{ row.name || '商品已删除' }}</span>
-            </div>
-          </template>
-        </el-table-column>
-
-        <el-table-column prop="orderNo" label="订单号" width="170" show-overflow-tooltip />
-
-        <!-- 总价：后端重算后存进订单的（单价×数量），直接显示 -->
-        <el-table-column label="总价" width="100" align="right">
-          <template #default="{ row }">
-            <span class="price">¥{{ money(row.price) }}</span>
-          </template>
-        </el-table-column>
-
-        <el-table-column prop="nums" label="数量" width="70" align="center" />
-        <el-table-column prop="userName" label="收货人" width="100" show-overflow-tooltip />
-        <el-table-column prop="userPhone" label="电话" width="130" show-overflow-tooltip />
-        <el-table-column prop="userAddress" label="地址" min-width="160" show-overflow-tooltip />
-        <el-table-column prop="time" label="下单时间" width="170" show-overflow-tooltip />
-
-        <!-- 状态：目前只有「待付款」（下单时数据库给的默认值） -->
-        <el-table-column label="状态" width="90" align="center">
-          <template #default="{ row }">
-            <el-tag size="small" :type="stateTagType(row.state)" effect="plain">
-              {{ row.state || '待付款' }}
-            </el-tag>
-          </template>
-        </el-table-column>
-
-        <el-table-column label="操作" width="150" fixed="right" align="center">
-          <template #default="{ row }">
-            <!-- 只有待付款的订单才显示支付按钮（已支付的再点会被后端 409 拦住） -->
-            <el-button
-              v-if="row.state === '待付款'"
-              link
-              type="primary"
-              @click="handlePay(row)"
-            >支付</el-button>
-            <el-button link type="danger" @click="handleDelete(row)">删除</el-button>
-          </template>
-        </el-table-column>
-      </el-table>
-
+    <section class="orders-list" v-loading="loading" aria-label="订单列表">
+      <article v-for="row in list" :key="row.id" class="receipt">
+        <header class="receipt-head">
+          <span>订单号 {{ row.orderNo }}</span>
+          <time>{{ row.time }}</time>
+          <el-tag size="small" :type="stateTagType(row.state)" effect="plain">{{ row.state }}</el-tag>
+        </header>
+        <div class="purchase">
+          <el-image v-if="row.goods?.cover" class="cover" :src="mediaUrl(row.goods.cover)"
+            :preview-src-list="[mediaUrl(row.goods.cover)]" fit="cover" />
+          <div v-else class="cover placeholder"><el-icon><Picture /></el-icon></div>
+          <div class="item"><strong>{{ row.name || '商品已删除' }}</strong><small>数量 {{ row.nums }}</small></div>
+          <div class="amount"><small>订单总额</small><strong>¥{{ money(row.price) }}</strong></div>
+        </div>
+        <footer class="receipt-foot">
+          <details><summary>收货信息</summary><p>{{ row.userName }} · {{ row.userPhone }}<br>{{ row.userAddress }}</p></details>
+          <div class="actions">
+            <template v-if="row.state === '待付款'">
+              <el-button text @click="changeOrder(row, true)">取消订单</el-button>
+              <el-button type="primary" @click="handlePay(row)">支付</el-button>
+            </template>
+            <el-button v-else-if="['已支付','已付款','已取消'].includes(row.state)" text @click="changeOrder(row, false)">移除</el-button>
+          </div>
+        </footer>
+      </article>
       <!-- ③ 分页 -->
-      <div class="pager">
+      <div v-if="total > query.size" class="pager">
         <el-pagination
           v-model:current-page="query.page"
           v-model:page-size="query.size"
@@ -98,7 +63,7 @@
       <el-empty v-if="!loading && !list.length" description="还没有订单，去挑一件吧">
         <el-button type="primary" @click="goGoods">去逛逛</el-button>
       </el-empty>
-    </el-card>
+    </section>
   </div>
 </template>
 
@@ -107,7 +72,7 @@ import { onMounted, reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Picture } from '@element-plus/icons-vue'
-import { deleteOrder, getMyOrders, payOrder } from '@/api/orders'
+import { cancelOrder, deleteOrder, getMyOrders, payOrder } from '@/api/orders'
 import { mediaUrl } from '@/utils/format'
 
 const router = useRouter()
@@ -117,7 +82,7 @@ const list = ref([])
 const total = ref(0)
 const query = reactive({ page: 1, size: 10 })
 
-/** 价格：49 → "49.00"（后端 price 是 double，直接显示会出现 49.0 这种） */
+/** 价格：49 → "49.00" */
 function money(v) {
   const n = Number(v)
   return Number.isFinite(n) ? n.toFixed(2) : '0.00'
@@ -148,20 +113,22 @@ async function loadOrders() {
   }
 }
 
-/**
- * 删除自己的订单
- * ⚠️ 不用再问「是不是我的」—— 后端 delete 里会校验：
- *    普通账号删别人的单，直接 403「只能删除自己的订单」
- */
-async function handleDelete(row) {
+/** 取消会释放库存；移除仅影响买家的列表。 */
+async function changeOrder(row, cancel) {
+  const action = cancel ? '取消订单' : '从我的列表移除'
   try {
-    await ElMessageBox.confirm(`确认删除订单 ${row.orderNo} 吗？`, '确认删除', { type: 'warning' })
+    await ElMessageBox.confirm(`订单 ${row.orderNo}：确认${action}？`, action)
   } catch {
-    return // 用户点了取消
+    return
   }
-  await deleteOrder(row.id)
-  ElMessage.success('已删除')
-  loadOrders()
+  try {
+    if (cancel) await cancelOrder(row.id)
+    else await deleteOrder(row.id)
+    ElMessage.success(cancel ? '订单已取消' : '订单已移除')
+    if (!cancel && list.value.length === 1 && query.page > 1) query.page--
+  } finally {
+    await loadOrders()
+  }
 }
 
 /**
@@ -196,85 +163,34 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.my-orders {
-  --ink: #1a1a1a;
-  --muted: #8a8f98;
-  --line: #eceef2;
-  --accent: #e63935;
-  max-width: 1280px;
-  margin: 0 auto;
-  padding: 20px 28px 48px;
-}
-
-.order-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-}
-
-.order-head h1 {
-  margin: 0;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  font-size: 20px;
-  font-weight: 700;
-  color: var(--ink);
-}
-
-.bar {
-  width: 4px;
-  height: 18px;
-  border-radius: 2px;
-  background: var(--accent);
-  display: inline-block;
-}
-
-.count {
-  font-size: 13px;
-  color: var(--muted);
-}
-
-.panel {
-  margin-top: 20px;
-}
-
-/* 商品列：小封面图 + 名称横着排 */
-.goods-cell {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.goods-cover {
-  width: 48px;
-  height: 48px;
-  border-radius: 6px;
-  flex-shrink: 0;
-}
-
-.no-cover {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: #f4f5f7;
-  color: #c4c8d0;
-}
-
-.goods-name {
-  font-size: 13px;
-  color: var(--ink);
-}
-
-.price {
-  font-weight: 600;
-  color: var(--accent);
-}
-
-.pager {
-  margin-top: 16px;
-  display: flex;
-  justify-content: flex-end;
+.my-orders { max-width: 960px; margin: auto; padding: 32px clamp(16px,4vw,48px) 56px; color: #202323; }
+.order-head, .receipt-head, .purchase, .receipt-foot, .actions { display: flex; align-items: center; }
+.order-head { gap: 16px; margin-bottom: 20px; }
+.order-head h1 { font-size: clamp(23px,3vw,32px); margin: 0; }
+.count, small, time, summary { color: #646865; }
+.orders-list { min-height: 120px; }
+.receipt { background: white; border: 1px solid #dddeda; border-radius: 8px; margin-bottom: 14px; padding: 0 clamp(14px,3vw,24px); }
+.receipt-head { flex-wrap: wrap; gap: 6px 16px; padding: 13px 0; border-bottom: 1px solid #ecece8; font-size: 13px; font-variant-numeric: tabular-nums; }
+.receipt-head .el-tag { margin-left: auto; }
+.purchase { gap: 14px; padding: 18px 0; }
+.cover { flex: none; width: 64px; height: 64px; border-radius: 4px; }
+.placeholder { display: grid; place-items: center; background: #f4f4f1; color: #70746f; }
+.item, .amount { display: grid; gap: 5px; min-width: 0; overflow-wrap: anywhere; }
+.amount { margin-left: auto; text-align: right; font-variant-numeric: tabular-nums; }
+.amount strong { font-size: 20px; }
+.receipt-foot { align-items: baseline; justify-content: space-between; gap: 10px; border-top: 1px solid #ecece8; padding: 10px 0; }
+details { min-width: 0; font-size: 14px; }
+summary { cursor: pointer; padding: 6px 0; }
+details p { line-height: 1.7; overflow-wrap: anywhere; }
+.actions { flex: none; }
+.actions .el-button--primary { --el-button-bg-color: #282c29; --el-button-border-color: #282c29; --el-button-hover-bg-color: #464c48; --el-button-hover-border-color: #464c48; }
+.pager { display: flex; justify-content: flex-end; }
+@media(max-width: 540px) {
+  .my-orders { padding-top: 18px; }
+  .receipt-head time { order: 3; width: 100%; }
+  .cover { width: 48px; height: 48px; }
+  .purchase { gap: 10px; }
+  .item { flex: 1; }
+  .amount { max-width: 40%; }
 }
 </style>

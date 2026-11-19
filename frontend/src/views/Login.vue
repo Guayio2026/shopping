@@ -7,7 +7,7 @@
         <div class="visual-mask" />
         <div class="visual-content">
           <h1 class="visual-title">{{ systemStore.displayName }}</h1>
-          <p class="visual-desc">简洁高效 · 开箱即用 · 快速二次开发</p>
+          <p class="visual-desc">管理商品、订单与商城内容</p>
         </div>
       </section>
 

@@ -1,5 +1,7 @@
 package com.scaffold.dto;
 
+import java.math.BigDecimal;
+
 import lombok.Data;
 
 import java.time.LocalDateTime;
@@ -18,5 +20,5 @@ public class AccountProfile {
     private String accountType;
     private Integer status;
     private LocalDateTime createdAt;
-    private Double account;
+    private BigDecimal account;
 }

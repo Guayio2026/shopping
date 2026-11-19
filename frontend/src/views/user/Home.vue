@@ -1,29 +1,34 @@
 <template>
   <div class="mall-home" v-loading="loading">
     <!-- ① 左分类 + 右轮播 -->
-    <section class="hero">
-      <aside class="type-panel">
-        <div v-for="t in types" :key="t.id" class="type-item" @click="goGoods(t.id)">
+    <section v-if="types.length || carousels.length" class="hero">
+      <nav v-if="types.length" class="type-panel" aria-label="商品分类">
+        <h2>商品分类</h2>
+        <button type="button" v-for="t in types" :key="t.id" class="type-item" @click="goGoods(t.id)">
           <span>{{ t.name }}</span>
-          <span class="arrow">›</span>
-        </div>
-        <p v-if="!types.length" class="type-empty">暂无分类</p>
-      </aside>
 
-      <div class="carousel-wrap">
-        <el-carousel v-if="carousels.length" height="400px" :interval="5000">
+        </button>
+      </nav>
+
+      <div v-if="carousels.length" class="carousel-wrap">
+        <el-carousel height="var(--banner-height)" :interval="5000">
           <el-carousel-item v-for="item in carousels" :key="item.id">
-            <img class="carousel-img" :src="mediaUrl(item.cover)" alt="" />
+            <div class="feature">
+              <div class="feature-copy">
+                <h2>{{ item.name || '商城推荐' }}</h2>
+                <router-link :to="item.goodsId ? '/user/goods/' + item.goodsId : '/user/goods'">{{ item.goodsId ? '查看商品' : '浏览商品' }} ↗</router-link>
+              </div>
+              <img class="carousel-img" :src="mediaUrl(item.cover)" :alt="item.name || '商城推荐'" />
+            </div>
           </el-carousel-item>
         </el-carousel>
-        <el-empty v-else description="暂无轮播图" />
       </div>
     </section>
 
     <!-- ①.5 商城公告（第十一章新增）：折叠面板，点标题展开正文 -->
     <section v-if="notices.length" class="block notice-block">
       <header class="block-head">
-        <h2><i class="bar" />商城公告</h2>
+        <h2>商城公告</h2>
       </header>
 
       <el-collapse v-model="activeNotice" class="notice-collapse">
@@ -42,22 +47,12 @@
     <!-- ②③ 新品上架 / 热销商品：同一份模板，v-for 渲染两次 -->
     <section v-for="block in goodsBlocks" :key="block.title" class="block">
       <header class="block-head">
-        <h2><i class="bar" />{{ block.title }}</h2>
-        <span class="more" @click="goGoods()">查看更多 ›</span>
+        <h2>{{ block.title }}</h2>
+        <router-link class="more" to="/user/goods">查看全部 ›</router-link>
       </header>
 
       <div v-if="block.list.length" class="goods-grid">
-        <article v-for="g in block.list" :key="g.id" class="goods-card" @click="goDetail(g.id)">
-          <img class="goods-cover" :src="mediaUrl(g.cover)" alt="" />
-          <div class="goods-body">
-            <p class="goods-name">{{ g.name }}</p>
-            <p class="goods-descr">{{ g.descr }}</p>
-            <div class="goods-foot">
-              <span class="goods-price">¥{{ money(g.price) }}</span>
-              <span class="goods-sales">累计热销：{{ g.sales }}</span>
-            </div>
-          </div>
-        </article>
+        <CatalogProduct v-for="g in block.list" :key="g.id" :goods="g" />
       </div>
       <el-empty v-else description="暂无商品" />
     </section>
@@ -65,6 +60,7 @@
 </template>
 
 <script setup>
+import CatalogProduct from '@/components/CatalogProduct.vue'
 import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { getHomeData } from '@/api/homePublic'
@@ -80,11 +76,6 @@ const salesGoods = ref([])
 const notices = ref([])          // 公告列表（后端 /public/home 里的 notices）
 const activeNotice = ref([0])    // 默认展开第一条公告
 
-/** 价格：49 → "49.00"（后端 price 是 double，直接显示会出现 49.0 这种） */
-function money(v) {
-  const n = Number(v)
-  return Number.isFinite(n) ? n.toFixed(2) : '0.00'
-}
 
 /** 两个商品块的配置：标题 + 数据源。这样模板里只写一遍卡片 */
 const goodsBlocks = computed(() => [
@@ -102,11 +93,6 @@ function goGoods(typeId) {
     path: '/user/goods',
     query: typeId ? { typeId } : {}
   })
-}
-
-/** 进商品详情页（点商品卡片时调用；注意别和上面的 goGoods 搞混：那个是去列表页） */
-function goDetail(id) {
-  router.push(`/user/goods/${id}`)
 }
 
 onMounted(async () => {
@@ -128,234 +114,33 @@ onMounted(async () => {
 </script>
 
 <style scoped>
-.mall-home {
-  --ink: #1a1a1a;
-  --muted: #8a8f98;
-  --line: #eceef2;
-  --accent: #e63935;
-  max-width: 1280px;
-  margin: 0 auto;
-  padding: 20px 28px 48px;
-}
-
-/* ===== 顶部：左分类 + 右轮播 ===== */
-.hero {
-  display: flex;
-  gap: 12px;
-}
-
-.type-panel {
-  flex: 0 0 220px;
-  background: #2b2f36;
-  border-radius: 10px;
-  padding: 8px 0;
-  min-height: 400px;
-}
-
-.type-item {
-  height: 40px;
-  padding: 0 18px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  color: #fff;
-  font-size: 13px;
-  cursor: pointer;
-  transition: background 0.2s ease;
-}
-
-.type-item:hover {
-  background: var(--accent);
-}
-
-.type-item .arrow {
-  color: rgba(255, 255, 255, 0.6);
-}
-
-.type-empty {
-  color: rgba(255, 255, 255, 0.5);
-  font-size: 13px;
-  text-align: center;
-  margin-top: 40px;
-}
-
-.carousel-wrap {
-  flex: 1;
-  min-width: 0;
-  border-radius: 10px;
-  overflow: hidden;
-  background: #fff;
-  border: 1px solid var(--line);
-}
-
-.carousel-img {
-  width: 100%;
-  height: 400px;
-  object-fit: cover;
-  display: block;
-}
-
-/* ===== 商品区块 ===== */
-.block {
-  margin-top: 40px;
-}
-
-.block-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 16px;
-}
-
-.block-head h2 {
-  margin: 0;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  font-size: 20px;
-  font-weight: 700;
-  color: var(--ink);
-}
-
-.bar {
-  width: 4px;
-  height: 18px;
-  border-radius: 2px;
-  background: var(--accent);
-  display: inline-block;
-}
-
-.more {
-  font-size: 13px;
-  color: var(--muted);
-  cursor: pointer;
-  transition: color 0.2s ease;
-}
-
-.more:hover {
-  color: var(--accent);
-}
-
-.goods-grid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 16px;
-}
-
-.goods-card {
-  background: #fff;
-  border: 1px solid var(--line);
-  border-radius: 10px;
-  overflow: hidden;
-  cursor: pointer;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
-}
-
-.goods-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 20px rgba(26, 26, 26, 0.08);
-}
-
-.goods-cover {
-  width: 100%;
-  height: 180px;
-  object-fit: cover;
-  display: block;
-}
-
-.goods-body {
-  padding: 12px;
-}
-
-/* 商品名：最多 2 行，超出显示省略号；固定高度保证卡片底部对齐 */
-.goods-name {
-  margin: 0;
-  font-size: 14px;
-  font-weight: 600;
-  color: var(--ink);
-  line-height: 1.45;
-  min-height: 40px;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-}
-
-/* 描述：最多 1 行 */
-.goods-descr {
-  margin: 6px 0 0;
-  font-size: 12px;
-  color: var(--muted);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.goods-foot {
-  margin-top: 10px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
-.goods-price {
-  font-size: 20px;
-  font-weight: 700;
-  color: var(--accent);
-}
-
-.goods-sales {
-  font-size: 11px;
-  color: var(--muted);
-}
-
-/* ===== 公告区块（第十一章） ===== */
-.notice-collapse {
-  background: #fff;
-  border: 1px solid var(--line);
-  border-radius: 10px;
-  padding: 0 16px;
-}
-
-/* 标题行：公告标题靠左，时间挤到最右 */
-.notice-title-row {
-  flex: 1;
-  min-width: 0;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.notice-name {
-  font-size: 14px;
-  font-weight: 600;
-  color: var(--ink);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.notice-time {
-  margin-left: auto;
-  font-size: 12px;
-  color: var(--muted);
-}
-
-/* pre-wrap：保留正文里的换行（textarea 里敲的回车是 \n，默认会被 HTML 吃掉） */
-.notice-body {
-  white-space: pre-wrap;
-  font-size: 14px;
-  line-height: 1.8;
-  color: #4a4f57;
-}
-
-@media (max-width: 900px) {
-  .goods-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
-
-  .type-panel {
-    display: none;
-  }
+.mall-home { max-width:1280px; margin:auto; padding:8px clamp(16px,3vw,40px) 64px; --banner-height:clamp(270px,32vw,430px); }
+.type-panel { display:flex; align-items:center; gap:24px; overflow-x:auto; padding:10px 0 16px; }
+.type-panel h2 { font-size:13px; color:#62685b; margin:0; padding-right:18px; border-right:1px solid #cccfc2; white-space:nowrap; }
+.type-item { flex:none; border:0; background:none; cursor:pointer; padding:7px 2px; font:inherit; color:#363c33; }
+.type-item:hover,.more:hover { text-decoration:underline; }
+.feature { display:grid; grid-template-columns: minmax(0,1fr) minmax(0,1.8fr); height:100%; background:#26382f; color:#faf9ef; }
+.feature-copy { display:flex; flex-direction:column; align-items:flex-start; justify-content:center; gap:24px; padding:clamp(22px,4vw,64px); }
+.feature-copy h2,.block-head h2 { font-family:"Songti SC","STSong","SimSun",serif; margin:0; font-weight:600; }
+.feature-copy h2 { font-size:clamp(27px,4vw,60px); line-height:1.22; overflow-wrap:anywhere; display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden; }
+.feature-copy a { color:inherit; text-underline-offset:6px; font-size:14px; }
+.carousel-img { width:100%; height:100%; min-height:0; object-fit:cover; }
+.block { margin-top:clamp(30px,4vw,58px); }
+.block-head { display:flex; justify-content:space-between; align-items:baseline; margin-bottom:18px; }
+.block-head h2 { font-size:clamp(24px,2.5vw,36px); }
+.more { color:#424b41; font-size:14px; text-decoration:none; }
+.goods-grid { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:clamp(12px,2vw,28px); }
+.notice-collapse { --el-collapse-header-bg-color:transparent; --el-collapse-content-bg-color:transparent; }
+.notice-title-row { display:flex; align-items:center; width:100%; gap:12px; text-align:left; }
+.notice-time { margin-left:auto; color:#65695f; }
+.notice-body { white-space:pre-wrap; overflow-wrap:anywhere; }
+@media(max-width:760px) {
+  .goods-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
+  .type-panel { gap:15px; }
+  .mall-home { --banner-height:clamp(300px,78vw,420px); }
+  .feature { grid-template-columns:1fr; grid-template-rows:minmax(0,1fr) auto; }
+  .feature-copy { grid-row:2; flex-direction:row; align-items:center; justify-content:space-between; padding:16px 16px 28px; gap:12px; }
+  .feature-copy h2 { font-size:23px; -webkit-line-clamp:2; }
+  .feature-copy a { flex:none; }
 }
 </style>

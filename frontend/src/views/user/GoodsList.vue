@@ -2,15 +2,15 @@
   <div class="mall-list">
     <!-- ① 顶部：标题 + 搜索框 -->
     <header class="list-head">
-      <h1><i class="bar" />热卖商品</h1>
+      <h1>全部商品</h1>
       <div class="search-box">
         <input
           v-model="keyword"
           type="text"
-          placeholder="请输入搜索商品名称"
+          aria-label="搜索商品名称" placeholder="搜索商品名称"
           @keyup.enter="handleSearch"
         />
-        <button type="button" class="search-btn" @click="handleSearch">
+        <button type="button" aria-label="搜索" class="search-btn" @click="handleSearch">
           <el-icon :size="16"><Search /></el-icon>
         </button>
       </div>
@@ -41,17 +41,7 @@
     <!-- ③ 商品网格 -->
     <div v-loading="loading" class="list-body">
       <div v-if="goods.length" class="goods-grid">
-        <article v-for="g in goods" :key="g.id" class="goods-card" @click="goDetail(g.id)">
-          <img class="goods-cover" :src="mediaUrl(g.cover)" alt="" />
-          <div class="goods-body">
-            <p class="goods-name">{{ g.name }}</p>
-            <p class="goods-descr">{{ g.descr }}</p>
-            <div class="goods-foot">
-              <span class="goods-price">¥{{ money(g.price) }}</span>
-              <span class="goods-sales">累计热销：{{ g.sales }}</span>
-            </div>
-          </div>
-        </article>
+        <CatalogProduct v-for="g in goods" :key="g.id" :goods="g" />
       </div>
       <!-- ⚠️ 用 v-else-if="!loading" 而不是 v-else：否则加载中会先闪一下「没有商品哟~」 -->
       <el-empty v-else-if="!loading" description="没有商品哟~" />
@@ -73,11 +63,11 @@
 </template>
 
 <script setup>
+import CatalogProduct from '@/components/CatalogProduct.vue'
 import { onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { Search } from '@element-plus/icons-vue'
 import { getPublicGoods, getPublicTypes } from '@/api/goodsPublic'
-import { mediaUrl } from '@/utils/format'
 
 const route = useRoute()
 const router = useRouter()
@@ -98,11 +88,6 @@ const keyword = ref('')   // 搜索词
 const selectedTypeId = ref(Number(route.query.typeId) || 0)
 
 // ========== 工具 ==========
-/** 价格：49 → "49.00"（后端 price 是 double，直接显示会出现 49.0 这种） */
-function money(v) {
-  const n = Number(v)
-  return Number.isFinite(n) ? n.toFixed(2) : '0.00'
-}
 
 // ========== 数据加载 ==========
 /** 加载分类列表 */
@@ -167,10 +152,6 @@ function handlePageChange(p) {
   page.value = p
   loadGoods()
 }
-/** 进商品详情页 */
-function goDetail(id) {
-  router.push(`/user/goods/${id}`)
-}
 
 onMounted(() => {
   loadTypes()
@@ -183,10 +164,10 @@ onMounted(() => {
   --ink: #1a1a1a;
   --muted: #8a8f98;
   --line: #eceef2;
-  --accent: #e63935;
+  --accent: #304739;
   max-width: 1280px;
   margin: 0 auto;
-  padding: 20px 28px 48px;
+  padding: clamp(24px,4vw,56px) clamp(16px,3vw,40px) 64px;
 }
 
 /* ===== 顶部：标题 + 搜索框 ===== */
@@ -202,7 +183,7 @@ onMounted(() => {
   display: flex;
   align-items: center;
   gap: 10px;
-  font-size: 20px;
+  font: 600 clamp(30px,4vw,48px)/1.2 "Songti SC","STSong","SimSun",serif;
   font-weight: 700;
   color: var(--ink);
 }
@@ -253,8 +234,8 @@ onMounted(() => {
 }
 
 .search-btn:hover {
-  background: #cf2f2c;
-  border-color: #cf2f2c;
+  background: #20362b;
+  border-color: #20362b;
 }
 
 /* ===== 分类按钮组 ===== */
@@ -295,74 +276,8 @@ onMounted(() => {
 
 .goods-grid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(4,minmax(0,1fr));
   gap: 16px;
-}
-
-.goods-card {
-  background: #fff;
-  border: 1px solid var(--line);
-  border-radius: 10px;
-  overflow: hidden;
-  cursor: pointer;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
-}
-
-.goods-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 20px rgba(26, 26, 26, 0.08);
-}
-
-.goods-cover {
-  width: 100%;
-  height: 180px;
-  object-fit: cover;
-  display: block;
-}
-
-.goods-body {
-  padding: 12px;
-}
-
-/* 商品名：最多 2 行，超出省略；固定高度保证卡片底部对齐 */
-.goods-name {
-  margin: 0;
-  font-size: 14px;
-  font-weight: 600;
-  color: var(--ink);
-  line-height: 1.45;
-  min-height: 40px;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-}
-
-.goods-descr {
-  margin: 6px 0 0;
-  font-size: 12px;
-  color: var(--muted);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.goods-foot {
-  margin-top: 10px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
-.goods-price {
-  font-size: 20px;
-  font-weight: 700;
-  color: var(--accent);
-}
-
-.goods-sales {
-  font-size: 11px;
-  color: var(--muted);
 }
 
 /* ===== 分页 ===== */
@@ -380,11 +295,17 @@ onMounted(() => {
 
 @media (max-width: 900px) {
   .goods-grid {
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(2,minmax(0,1fr));
   }
 
   .search-box input {
     width: 150px;
   }
+}
+@media(max-width:600px) {
+  .list-head { align-items:stretch; flex-direction:column; }
+  .search-box input { flex:1; min-width:0; }
+  .pager { justify-content:center; }
+  .pager :deep(.el-pagination__jump) { display:none; }
 }
 </style>

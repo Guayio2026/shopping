@@ -47,15 +47,15 @@ export function getOrderPage(params) {
   return request.get('/orders/page', { params })
 }
 
-/**
- * 删除订单
- * 前台删自己的（后端会校验归属），后台删任意单。
- * @param {number|string} id 订单 id
- */
+/** 从买家列表移除已取消或已付款的订单。 */
 export function deleteOrder(id) {
   return request.delete(`/orders/${id}`)
 }
 // 余额支付：POST /api/orders/8/pay（不传金额，金额后端从订单里读）
 export function payOrder(id) {
   return request.post(`/orders/${id}/pay`)
+}
+
+export function cancelOrder(id) {
+  return request.post(`/orders/${id}/cancel`)
 }
