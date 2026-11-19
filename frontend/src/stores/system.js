@@ -3,17 +3,21 @@ import { computed, ref, watch } from 'vue'
 import { getSystemConfig, updateSystemConfig } from '@/api/system'
 import { mediaUrl } from '@/utils/format'
 
-const DEFAULT_NAME = 'Admin Scaffold'
+const DEFAULT_NAME = '日常集'
+
+function resolveName(value) {
+  const name = String(value ?? '').trim()
+  return !name || /^admin scaffold$/i.test(name) ? DEFAULT_NAME : name
+}
 const DEFAULT_LOGO = '/logo.svg'
 
 export const useSystemStore = defineStore('system', () => {
-  const systemName = ref(localStorage.getItem('system-name') || DEFAULT_NAME)
+  const systemName = ref(resolveName(localStorage.getItem('system-name')))
   const systemLogo = ref(localStorage.getItem('system-logo') || '')
   const loaded = ref(false)
 
   const displayName = computed(() => {
-    const name = String(systemName.value || '').trim()
-    return name || DEFAULT_NAME
+    return resolveName(systemName.value)
   })
 
   /** 可用于 <img> 的最终地址；未上传时走默认 logo */
@@ -45,7 +49,7 @@ export const useSystemStore = defineStore('system', () => {
   }
 
   function applyName(name) {
-    const next = String(name || '').trim() || DEFAULT_NAME
+    const next = resolveName(name)
     systemName.value = next
     localStorage.setItem('system-name', next)
     applyDocumentTitle()

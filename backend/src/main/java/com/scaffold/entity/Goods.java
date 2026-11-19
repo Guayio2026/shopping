@@ -1,5 +1,7 @@
 package com.scaffold.entity;
 
+import java.math.BigDecimal;
+
 import lombok.Data;
 
 /**
@@ -47,8 +49,8 @@ public class Goods {
     /** 商品封面图（goods 表列：cover，存图片路径/URL）→ 前端 row.cover */
     private String cover;
 
-    /** 价格（goods 表列：price，double(10,2)）→ 前端 row.price */
-    private Double price;
+    /** 价格（goods 表列：price，DECIMAL(18,2)）→ 前端 row.price */
+    private BigDecimal price;
 
     /** 库存（goods 表列：store）→ 前端 row.store */
     private Integer store;

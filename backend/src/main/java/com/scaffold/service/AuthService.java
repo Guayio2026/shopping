@@ -1,5 +1,7 @@
 package com.scaffold.service;
 
+import java.math.BigDecimal;
+
 import com.scaffold.common.BusinessException;
 import com.scaffold.dto.AccountProfile;
 import com.scaffold.dto.LoginRequest;
@@ -168,11 +170,11 @@ public class AuthService {
         }
 
         // 2. 金额校验（第二道关：第一道是 Controller 的 @Valid）
-        Double amount = request.getAmount();
-        if (amount == null || amount <= 0) {
+        BigDecimal amount = request.getAmount();
+        if (amount == null || amount.signum() <= 0) {
             throw new BusinessException("充值金额必须大于 0");
         }
-        if (amount > 10000) {
+        if (amount.compareTo(BigDecimal.valueOf(10000)) > 0) {
             throw new BusinessException("单次充值不能超过 10000 元");
         }
 

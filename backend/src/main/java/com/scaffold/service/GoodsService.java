@@ -1,5 +1,7 @@
 package com.scaffold.service;
 
+import java.math.BigDecimal;
+
 import com.scaffold.common.BusinessException;
 import com.scaffold.common.PageResult;
 import com.scaffold.dto.NameCount;
@@ -179,7 +181,7 @@ public class GoodsService {
      * 如果直接走 normalize()，它们会被补成「当前时间 / 1 号用户 / 0」——
      * 结果就是「改一下商品名，上架日期和销量却被重置了」这种脏数据。
      *
-     * 所以第 2 步先从数据库取出原记录，把这三个字段「继承」过来，再补默认值。
+     * 所以第 2 步先从数据库取出原记录，把日期和发布者字段「继承」过来；更新语句不写销量。
      */
     public Goods update(Integer id, Goods goods) {
         Goods original = getById(id);   // 先确认存在，不存在直接抛 404
@@ -193,13 +195,6 @@ public class GoodsService {
         if (goods.getUserId() == null) {
             goods.setUserId(original.getUserId());
         }
-        // ⚠️ 销量同样不在编辑弹窗里（Goods.vue 的 payload 不含 sales）。
-        // 必须在这里先把它继承过来：否则紧随其后的 normalize() 会把 null 补成 0，
-        // 变成「编辑一次商品，销量就被清零」。
-        if (goods.getSales() == null) {
-            goods.setSales(original.getSales());
-        }
-
         normalize(goods);
         goodsMapper.update(goods);
         return goodsMapper.findById(id);   // 回查返回最新数据（带分类名、用户名）
@@ -231,8 +226,11 @@ public class GoodsService {
         if (goods.getStore() == null) {
             goods.setStore(0);                          // 库存默认 0
         }
+        if (goods.getPrice() != null && (goods.getPrice().signum() < 0 || goods.getPrice().stripTrailingZeros().scale() > 2)) {
+            throw new BusinessException("价格须为非负金额，最多两位小数");
+        }
         if (goods.getPrice() == null) {
-            goods.setPrice(0.0);                        // 价格默认 0
+            goods.setPrice(BigDecimal.ZERO);                        // 价格默认 0
         }
         if (goods.getUserId() == null) {
             goods.setUserId(1);                         // 默认属于 1 号用户（演示用户）

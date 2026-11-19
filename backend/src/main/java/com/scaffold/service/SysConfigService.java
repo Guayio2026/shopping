@@ -16,7 +16,7 @@ public class SysConfigService {
 
     public static final String KEY_SYSTEM_NAME = "system_name";
     public static final String KEY_SYSTEM_LOGO = "system_logo";
-    public static final String DEFAULT_SYSTEM_NAME = "Admin Scaffold";
+    public static final String DEFAULT_SYSTEM_NAME = "日常集";
 
     private final SysConfigMapper sysConfigMapper;
 
@@ -32,7 +32,8 @@ public class SysConfigService {
         if (config == null || !StringUtils.hasText(config.getConfigValue())) {
             return DEFAULT_SYSTEM_NAME;
         }
-        return config.getConfigValue().trim();
+        String name = config.getConfigValue().trim();
+        return "Admin Scaffold".equalsIgnoreCase(name) ? DEFAULT_SYSTEM_NAME : name;
     }
 
     public String getSystemLogo() {
@@ -40,7 +41,8 @@ public class SysConfigService {
         if (config == null || !StringUtils.hasText(config.getConfigValue())) {
             return "";
         }
-        return config.getConfigValue().trim();
+        String name = config.getConfigValue().trim();
+        return "Admin Scaffold".equalsIgnoreCase(name) ? DEFAULT_SYSTEM_NAME : name;
     }
 
     public Map<String, String> updatePublicConfig(String systemName, String systemLogo) {

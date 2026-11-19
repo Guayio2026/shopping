@@ -6,7 +6,7 @@
         <p class="welcome-kicker">管理后台</p>
         <h2>你好，{{ displayName }}</h2>
         <p class="welcome-desc">
-          欢迎使用 {{ systemStore.displayName }}。这是一个精简的管理脚手架，包含用户、菜单、轮播图、日志与系统设置等基础能力。
+          欢迎使用 {{ systemStore.displayName }}。在这里查看经营数据，管理商品、订单与商城内容。
         </p>
         <div class="welcome-links">
           <router-link to="/admin/admins" class="link-chip">管理员管理</router-link>
